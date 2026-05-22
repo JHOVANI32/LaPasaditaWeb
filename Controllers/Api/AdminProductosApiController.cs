@@ -3,11 +3,13 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ClosedXML.Excel;
 using LaPasaditaWeb.Data;
 using LaPasaditaWeb.Models;
 
@@ -219,6 +221,166 @@ namespace LaPasaditaWeb.Controllers.Api
 
             var rutaRelativa = $"/images/productos/{nombreUnico}";
             return Ok(new { rutaImagen = rutaRelativa });
+        }
+
+        // GET: api/AdminProductosApi/plantilla-excel
+        [HttpGet("plantilla-excel")]
+        public IActionResult DescargarPlantilla()
+        {
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Productos");
+                var currentRow = 1;
+
+                // Encabezados
+                worksheet.Cell(currentRow, 1).Value = "Nombre";
+                worksheet.Cell(currentRow, 2).Value = "Descripcion";
+                worksheet.Cell(currentRow, 3).Value = "Precio";
+                worksheet.Cell(currentRow, 4).Value = "Stock";
+                worksheet.Cell(currentRow, 5).Value = "Categoria";
+                worksheet.Cell(currentRow, 6).Value = "ImagenUrl";
+
+                // Estilos para el encabezado
+                var headerRange = worksheet.Range(1, 1, 1, 6);
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Fill.BackgroundColor = XLColor.LightGreen;
+
+                // Ejemplo
+                currentRow++;
+                worksheet.Cell(currentRow, 1).Value = "Ejemplo Producto";
+                worksheet.Cell(currentRow, 2).Value = "Descripción de prueba";
+                worksheet.Cell(currentRow, 3).Value = 25.50;
+                worksheet.Cell(currentRow, 4).Value = 100;
+                worksheet.Cell(currentRow, 5).Value = "Abarrotes";
+                worksheet.Cell(currentRow, 6).Value = "/images/productos/default-grocery.png";
+
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Plantilla_Productos.xlsx");
+                }
+            }
+        }
+
+        // POST: api/AdminProductosApi/carga-masiva
+        [HttpPost("carga-masiva")]
+        public async Task<IActionResult> CargaMasiva([FromForm] IFormFile archivoExcel)
+        {
+            if (archivoExcel == null || archivoExcel.Length == 0)
+            {
+                return BadRequest(new { mensaje = "Por favor, sube un archivo Excel válido." });
+            }
+
+            if (!Path.GetExtension(archivoExcel.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { mensaje = "El archivo debe ser un .xlsx" });
+            }
+
+            int productosAgregados = 0;
+            int productosActualizados = 0;
+
+            using (var stream = new MemoryStream())
+            {
+                await archivoExcel.CopyToAsync(stream);
+                using (var workbook = new XLWorkbook(stream))
+                {
+                    var worksheet = workbook.Worksheet(1);
+                    var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // Saltar encabezados
+
+                    foreach (var row in rows)
+                    {
+                        var nombre = row.Cell(1).GetString().Trim();
+                        if (string.IsNullOrEmpty(nombre)) continue; // Saltar filas vacías
+
+                        var descripcion = row.Cell(2).GetString().Trim();
+                        var precioStr = row.Cell(3).GetString().Trim();
+                        var stockStr = row.Cell(4).GetString().Trim();
+                        var categoriaNombre = row.Cell(5).GetString().Trim();
+                        var imagenUrl = row.Cell(6).GetString().Trim();
+
+                        if (!decimal.TryParse(precioStr, out decimal precio)) precio = 0;
+                        if (!int.TryParse(stockStr, out int stock)) stock = 0;
+
+                        // Buscar o crear categoría
+                        int categoriaId = 1; // Default fallback si todo falla
+                        if (!string.IsNullOrEmpty(categoriaNombre))
+                        {
+                            var categoria = await _context.Categorias.FirstOrDefaultAsync(c => c.Nombre.ToLower() == categoriaNombre.ToLower());
+                            if (categoria == null)
+                            {
+                                categoria = new Categoria
+                                {
+                                    Nombre = categoriaNombre,
+                                    Descripcion = "Categoría creada automáticamente",
+                                    Activo = true
+                                };
+                                _context.Categorias.Add(categoria);
+                                await _context.SaveChangesAsync();
+                            }
+                            categoriaId = categoria.Id;
+                        }
+
+                        // Buscar si el producto existe
+                        var productoExistente = await _context.Productos.FirstOrDefaultAsync(p => p.Nombre.ToLower() == nombre.ToLower());
+
+                        if (productoExistente != null)
+                        {
+                            // Actualizar
+                            decimal precioAnterior = productoExistente.Precio;
+
+                            productoExistente.Descripcion = descripcion;
+                            productoExistente.Precio = precio;
+                            productoExistente.Stock = stock;
+                            productoExistente.CategoriaId = categoriaId;
+                            if (!string.IsNullOrEmpty(imagenUrl)) productoExistente.ImagenUrl = imagenUrl;
+                            productoExistente.Activo = true; // Asegurar que está activo si se sube por excel
+
+                            if (precioAnterior != precio)
+                            {
+                                _context.HistorialPrecios.Add(new HistorialPrecio
+                                {
+                                    Producto = productoExistente,
+                                    PrecioAnterior = precioAnterior,
+                                    PrecioNuevo = precio,
+                                    FechaCambio = DateTime.UtcNow
+                                });
+                            }
+                            _context.Productos.Update(productoExistente);
+                            productosActualizados++;
+                        }
+                        else
+                        {
+                            // Crear nuevo
+                            var nuevoProducto = new Producto
+                            {
+                                Nombre = nombre,
+                                Descripcion = descripcion,
+                                Precio = precio,
+                                Stock = stock,
+                                CategoriaId = categoriaId,
+                                ImagenUrl = string.IsNullOrEmpty(imagenUrl) ? "/images/productos/default-grocery.png" : imagenUrl,
+                                Activo = true
+                            };
+                            _context.Productos.Add(nuevoProducto);
+
+                            _context.HistorialPrecios.Add(new HistorialPrecio
+                            {
+                                Producto = nuevoProducto,
+                                PrecioAnterior = 0,
+                                PrecioNuevo = precio,
+                                FechaCambio = DateTime.UtcNow
+                            });
+                            productosAgregados++;
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return Ok(new { mensaje = $"Carga masiva completada. {productosAgregados} agregados, {productosActualizados} actualizados." });
         }
     }
 

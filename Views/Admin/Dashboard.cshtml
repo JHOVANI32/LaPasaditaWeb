@@ -114,9 +114,12 @@
                         <h4 class="fw-bold m-0"><i class="bi bi-grid-3x3-gap"></i> Catálogo Físico de Productos</h4>
                         <p class="text-muted small m-0">Añade nuevos productos o edita el precio y stock en tiempo real mediante peticiones AJAX.</p>
                     </div>
-                    <div class="col-md-6 text-md-end">
-                        <button class="btn btn-success fw-bold px-4 py-2 shadow-sm" onclick="abrirModalCrear()" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
-                            <i class="bi bi-plus-circle"></i> Agregar Nuevo Producto
+                    <div class="col-md-6 text-md-end d-flex gap-2 justify-content-md-end">
+                        <button class="btn btn-outline-success fw-bold shadow-sm" onclick="abrirModalCargaMasiva()" style="border-radius: var(--radius-sm);">
+                            <i class="bi bi-file-earmark-excel"></i> Carga Masiva
+                        </button>
+                        <button class="btn btn-success fw-bold px-3 py-2 shadow-sm" onclick="abrirModalCrear()" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                            <i class="bi bi-plus-circle"></i> Nuevo Producto
                         </button>
                     </div>
                 </div>
@@ -473,6 +476,47 @@
                     <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: var(--radius-sm);">Cerrar</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL BOOTSTRAP PARA CARGA MASIVA DE EXCEL -->
+<div class="modal fade" id="modalCargaMasiva" tabindex="-1" aria-labelledby="modalCargaMasivaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-md);">
+            <div class="modal-header bg-success text-white py-3" style="background-color: var(--primary) !important; border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+                <h5 class="modal-title fw-bold" id="modalCargaMasivaTitulo">Carga Masiva de Productos (Excel)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small">Agrega o actualiza múltiples productos a la vez subiendo un archivo Excel <code>.xlsx</code>. El sistema identificará los productos por su nombre y creará las categorías automáticamente si no existen.</p>
+                
+                <div class="d-grid mb-4">
+                    <button class="btn btn-outline-secondary fw-bold" onclick="window.location.href='/api/AdminProductosApi/plantilla-excel'">
+                        <i class="bi bi-download"></i> Descargar Plantilla de Ejemplo
+                    </button>
+                </div>
+
+                <form id="formCargaMasiva" onsubmit="event.preventDefault(); subirArchivoExcel();">
+                    <div class="mb-3">
+                        <label for="archivoExcel" class="form-label small fw-bold text-muted">Seleccionar Archivo .xlsx *</label>
+                        <input class="form-control" type="file" id="archivoExcel" accept=".xlsx" required style="border-radius: var(--radius-sm);">
+                    </div>
+                    
+                    <div id="progresoCargaMasiva" class="d-none text-center py-2">
+                        <div class="spinner-border text-success spinner-border-sm" role="status">
+                            <span class="visually-hidden">Procesando...</span>
+                        </div>
+                        <span class="ms-2 text-success fw-bold small" id="mensajeCargaMasiva">Procesando archivo...</span>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success fw-bold py-2" id="btnSubirExcel" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                            <i class="bi bi-upload"></i> Subir y Procesar
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

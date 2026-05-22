@@ -872,3 +872,66 @@ function guardarConfiguracion(e) {
         mostrarNotificacionAdmin("Error al guardar configuración.", "danger");
     });
 }
+
+// ==========================================
+// 6. SECCIÓN DE CARGA MASIVA (EXCEL)
+// ==========================================
+
+window.abrirModalCargaMasiva = function() {
+    document.getElementById("formCargaMasiva").reset();
+    document.getElementById("progresoCargaMasiva").classList.add("d-none");
+    document.getElementById("btnSubirExcel").disabled = false;
+    
+    const modalEl = document.getElementById("modalCargaMasiva");
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+};
+
+window.subirArchivoExcel = function() {
+    const fileInput = document.getElementById("archivoExcel");
+    if (!fileInput || fileInput.files.length === 0) {
+        mostrarNotificacionAdmin("Por favor selecciona un archivo Excel primero.", "warning");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!file.name.endsWith('.xlsx')) {
+        mostrarNotificacionAdmin("El archivo debe tener extensión .xlsx", "warning");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("archivoExcel", file);
+
+    const btn = document.getElementById("btnSubirExcel");
+    const progreso = document.getElementById("progresoCargaMasiva");
+    
+    btn.disabled = true;
+    progreso.classList.remove("d-none");
+
+    fetch("/api/AdminProductosApi/carga-masiva", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => {
+        if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al procesar el archivo Excel."); });
+        return res.json();
+    })
+    .then(data => {
+        mostrarNotificacionAdmin(data.mensaje, "success");
+        
+        const modalEl = document.getElementById("modalCargaMasiva");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.hide();
+        
+        cargarInventario();
+    })
+    .catch(err => {
+        console.error("Error al subir excel:", err);
+        mostrarNotificacionAdmin(err.message || "Ocurrió un error al procesar el archivo.", "danger");
+    })
+    .finally(() => {
+        btn.disabled = false;
+        progreso.classList.add("d-none");
+    });
+};
