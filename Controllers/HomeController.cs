@@ -31,6 +31,14 @@ public class HomeController : Controller
             ViewBag.NombreTienda = "Abarrotes La Pasadita";
             ViewBag.CostoEnvioBase = 15.00m;
         }
+
+        // Cargar promociones activas
+        var ahora = DateTime.Now;
+        var promocionesActivas = await _context.Promociones
+            .Where(p => p.Activo && p.FechaInicio <= ahora && p.FechaFin >= ahora)
+            .ToListAsync();
+        ViewBag.PromocionesActivas = promocionesActivas;
+
         return View();
     }
 

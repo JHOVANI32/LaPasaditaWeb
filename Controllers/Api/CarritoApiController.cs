@@ -72,20 +72,42 @@ namespace LaPasaditaWeb.Controllers.Api
                 query = query.Where(c => c.SesionInvitadoId == sesion.Id);
             }
 
-            var items = await query
+            var itemsDb = await query
                 .Include(c => c.Producto)
-                .Select(c => new
+                .ToListAsync();
+
+            var ahora = DateTime.Now;
+            var promocionesActivas = await _context.Promociones
+                .Where(p => p.Activo && p.FechaInicio <= ahora && p.FechaFin >= ahora)
+                .ToListAsync();
+
+            var items = itemsDb.Select(c =>
+            {
+                decimal precioBase = c.Producto != null ? c.Producto.Precio : 0;
+                decimal precioFinal = precioBase;
+
+                if (c.Producto != null)
+                {
+                    var promoActiva = promocionesActivas.FirstOrDefault(p => p.ProductoId == c.ProductoId) 
+                                      ?? promocionesActivas.FirstOrDefault(p => p.ProductoId == null);
+                    if (promoActiva != null)
+                    {
+                        precioFinal = precioBase - (precioBase * (promoActiva.DescuentoPorcentaje / 100m));
+                    }
+                }
+
+                return new
                 {
                     c.Id,
                     c.ProductoId,
                     NombreProducto = c.Producto != null ? c.Producto.Nombre : "",
                     ImagenUrl = c.Producto != null ? c.Producto.ImagenUrl : "",
-                    PrecioUnitario = c.Producto != null ? c.Producto.Precio : 0,
+                    PrecioUnitario = precioFinal,
                     StockDisponible = c.Producto != null ? c.Producto.Stock : 0,
                     c.Cantidad,
-                    Subtotal = c.Producto != null ? c.Producto.Precio * c.Cantidad : 0
-                })
-                .ToListAsync();
+                    Subtotal = precioFinal * c.Cantidad
+                };
+            }).ToList();
 
             return Ok(items);
         }

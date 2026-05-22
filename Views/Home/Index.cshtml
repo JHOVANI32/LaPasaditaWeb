@@ -62,5 +62,8 @@
 </div>
 
 @section Scripts {
+    <script>
+        window.promocionesActivas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PromocionesActivas ?? new List<LaPasaditaWeb.Models.Promocion>()));
+    </script>
     <script src="~/js/catalogo.js" asp-append-version="true"></script>
 }

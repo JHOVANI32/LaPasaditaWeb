@@ -121,22 +121,46 @@ function renderizarProductos(productos) {
     }
 
     let html = "";
+    const promociones = window.promocionesActivas || [];
+
     productos.forEach(prod => {
         // En un proyecto real se usaría la imagen guardada. Si es null o placeholder, ponemos una genérica.
         const imgUrl = prod.imagenUrl || "/images/productos/default-grocery.png";
         
+        let descuento = 0;
+        let promoActiva = promociones.find(p => p.productoId === prod.id);
+        if (!promoActiva) {
+            promoActiva = promociones.find(p => p.productoId === null);
+        }
+        
+        let precioHtml = `<span class="product-price">$${prod.precio.toFixed(2)}</span>`;
+        let badgePromo = '';
+        
+        if (promoActiva) {
+            descuento = promoActiva.descuentoPorcentaje;
+            const precioRebajado = prod.precio - (prod.precio * (descuento / 100));
+            precioHtml = `
+                <div class="d-flex flex-column">
+                    <span class="text-muted text-decoration-line-through small" style="font-size: 0.8rem;">$${prod.precio.toFixed(2)}</span>
+                    <span class="product-price text-danger" style="font-size: 1.15rem;">$${precioRebajado.toFixed(2)}</span>
+                </div>
+            `;
+            badgePromo = `<div class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 m-2 fw-bold rounded shadow-sm" style="font-size: 0.75rem; z-index: 2;">-${descuento}% OFERTA</div>`;
+        }
+
         html += `
             <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4 fade-in-up">
-                <div class="product-card">
-                    <div class="product-img-container">
+                <div class="product-card position-relative h-100 d-flex flex-column">
+                    ${badgePromo}
+                    <div class="product-img-container" style="flex-shrink: 0;">
                         <img src="${imgUrl}" alt="${prod.nombre}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80'">
                     </div>
-                    <div class="product-body">
+                    <div class="product-body d-flex flex-column flex-grow-1">
                         <span class="product-category">ID: #${prod.id}</span>
                         <h5 class="product-title" title="${prod.nombre}">${prod.nombre}</h5>
-                        <p class="text-muted small mb-0 text-truncate" style="max-width: 100%;">${prod.descripcion || 'Sin descripción'}</p>
-                        <div class="product-price-row">
-                            <span class="product-price">$${prod.precio.toFixed(2)}</span>
+                        <p class="text-muted small mb-2 text-truncate" style="max-width: 100%; flex-grow: 1;">${prod.descripcion || 'Sin descripción'}</p>
+                        <div class="product-price-row mt-auto d-flex justify-content-between align-items-end">
+                            ${precioHtml}
                             <button class="btn-add-cart" onclick="agregarProducto(${prod.id})" title="Agregar al carrito">
                                 +
                             </button>

@@ -20,6 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (configuracionTab) {
             configuracionTab.addEventListener("click", cargarConfiguracion);
         }
+
+        // Cargar promociones al cambiar de pestaña
+        const promocionesTab = document.getElementById("promociones-tab");
+        if (promocionesTab) {
+            promocionesTab.addEventListener("click", cargarPromociones);
+        }
         
         // Agregar listener para guardar producto
         const formProd = document.getElementById("productoForm");
@@ -37,6 +43,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const formConfig = document.getElementById("configuracionForm");
         if (formConfig) {
             formConfig.addEventListener("submit", guardarConfiguracion);
+        }
+
+        // Agregar listener para guardar promoción
+        const formPromocion = document.getElementById("promocionForm");
+        if (formPromocion) {
+            formPromocion.addEventListener("submit", guardarPromocion);
         }
 
         // Agregar listener para cambiar estado de pedido
@@ -887,6 +899,8 @@ window.abrirModalCargaMasiva = function() {
     modal.show();
 };
 
+};
+
 window.subirArchivoExcel = function() {
     const fileInput = document.getElementById("archivoExcel");
     if (!fileInput || fileInput.files.length === 0) {
@@ -934,4 +948,139 @@ window.subirArchivoExcel = function() {
         btn.disabled = false;
         progreso.classList.add("d-none");
     });
+};
+
+// ==========================================
+// 5. SECCIÓN DE PROMOCIONES Y OFERTAS
+// ==========================================
+function cargarPromociones() {
+    const tabla = document.getElementById("tablaPromocionesCuerpo");
+    if (!tabla) return;
+
+    tabla.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-4">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 text-muted small">Cargando ofertas y promociones...</p>
+            </td>
+        </tr>`;
+
+    fetch("/api/AdminPromocionesApi")
+        .then(res => res.json())
+        .then(data => {
+            tabla.innerHTML = "";
+            if (data.length === 0) {
+                tabla.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted small">No hay promociones registradas.</td></tr>`;
+                return;
+            }
+
+            data.forEach(promo => {
+                let badgeClass = "bg-secondary";
+                if (promo.estado === "Activa") badgeClass = "bg-success";
+                if (promo.estado === "Programada") badgeClass = "bg-info text-dark";
+                if (promo.estado === "Expirada") badgeClass = "bg-danger";
+
+                const vigencia = `Del ${new Date(promo.fechaInicio).toLocaleDateString()} al ${new Date(promo.fechaFin).toLocaleDateString()}`;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="fw-bold">${promo.titulo}</td>
+                    <td class="text-muted small">${promo.nombreProducto}</td>
+                    <td class="text-danger fw-bold">-${promo.descuentoPorcentaje}%</td>
+                    <td class="small text-muted">${vigencia}</td>
+                    <td class="text-center"><span class="badge ${badgeClass} rounded-pill">${promo.estado}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger ms-1" onclick="eliminarPromocion(${promo.id})" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tabla.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            console.error("Error al cargar promociones:", err);
+            tabla.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger small">Error al cargar promociones.</td></tr>`;
+        });
+}
+
+window.abrirModalCrearPromocion = function() {
+    document.getElementById("promocionForm").reset();
+    document.getElementById("promocionId").value = "0";
+
+    // Llenar el select de productos con los disponibles de la tabla principal
+    const selectProd = document.getElementById("promoProductoId");
+    selectProd.innerHTML = '<option value="">Todos los productos</option>';
+    
+    // Obtenemos los productos actuales consultando de nuevo si hace falta o de una variable
+    fetch("/api/AdminProductosApi")
+        .then(res => res.json())
+        .then(data => {
+            if (data.productos) {
+                data.productos.forEach(p => {
+                    selectProd.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+                });
+            }
+        });
+
+    const modalEl = document.getElementById("modalPromocion");
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+};
+
+function guardarPromocion(e) {
+    e.preventDefault();
+
+    const promoId = document.getElementById("promocionId").value;
+    const prodIdVal = document.getElementById("promoProductoId").value;
+    
+    const promocion = {
+        titulo: document.getElementById("promoTitulo").value.trim(),
+        descripcion: document.getElementById("promoDescripcion").value.trim(),
+        productoId: prodIdVal ? parseInt(prodIdVal) : null,
+        descuentoPorcentaje: parseFloat(document.getElementById("promoDescuento").value),
+        fechaInicio: document.getElementById("promoFechaInicio").value,
+        fechaFin: document.getElementById("promoFechaFin").value,
+        activo: document.getElementById("promoActivo").checked
+    };
+
+    fetch("/api/AdminPromocionesApi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(promocion)
+    })
+    .then(async res => {
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || "Error al crear promoción.");
+        }
+        return res.json();
+    })
+    .then(data => {
+        mostrarNotificacionAdmin("Oferta creada exitosamente.", "success");
+        const modal = bootstrap.Modal.getInstance(document.getElementById("modalPromocion"));
+        modal.hide();
+        cargarPromociones();
+    })
+    .catch(err => {
+        console.error("Error:", err);
+        mostrarNotificacionAdmin(err.message, "danger");
+    });
+}
+
+window.eliminarPromocion = function(id) {
+    if (confirm("¿Estás seguro de eliminar esta oferta?")) {
+        fetch(`/api/AdminPromocionesApi/${id}`, { method: "DELETE" })
+            .then(res => {
+                if (res.ok) {
+                    mostrarNotificacionAdmin("Oferta eliminada.", "success");
+                    cargarPromociones();
+                } else {
+                    mostrarNotificacionAdmin("Error al eliminar la oferta.", "danger");
+                }
+            })
+            .catch(err => console.error(err));
+    }
 };

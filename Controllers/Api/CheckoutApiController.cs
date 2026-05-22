@@ -115,8 +115,29 @@ namespace LaPasaditaWeb.Controllers.Api
             var configTienda = await _context.ConfiguracionTienda.FirstOrDefaultAsync();
             decimal costoEnvio = configTienda != null ? configTienda.CostoEnvioBase : 15.00m;
 
-            // 4. Calcular Subtotal y Descuentos
-            decimal subtotal = itemsCarrito.Sum(item => (item.Producto?.Precio ?? 0) * item.Cantidad);
+            // 4. Calcular Subtotal, aplicando promociones activas
+            var ahora = DateTime.Now;
+            var promocionesActivas = await _context.Promociones
+                .Where(p => p.Activo && p.FechaInicio <= ahora && p.FechaFin >= ahora)
+                .ToListAsync();
+
+            decimal subtotal = 0;
+            foreach(var item in itemsCarrito)
+            {
+                if (item.Producto != null)
+                {
+                    decimal precioBase = item.Producto.Precio;
+                    decimal precioFinal = precioBase;
+                    var promo = promocionesActivas.FirstOrDefault(p => p.ProductoId == item.ProductoId) 
+                                ?? promocionesActivas.FirstOrDefault(p => p.ProductoId == null);
+                    
+                    if (promo != null)
+                    {
+                        precioFinal = precioBase - (precioBase * (promo.DescuentoPorcentaje / 100m));
+                    }
+                    subtotal += precioFinal * item.Cantidad;
+                }
+            }
             decimal descuento = 0;
             Cupon? cuponAplicado = null;
 
@@ -166,12 +187,22 @@ namespace LaPasaditaWeb.Controllers.Api
             // 6. Crear Detalle del Pedido y reducir Stock físico
             foreach (var item in itemsCarrito)
             {
+                decimal precioBase = item.Producto!.Precio;
+                decimal precioFinal = precioBase;
+                var promo = promocionesActivas.FirstOrDefault(p => p.ProductoId == item.ProductoId) 
+                            ?? promocionesActivas.FirstOrDefault(p => p.ProductoId == null);
+                
+                if (promo != null)
+                {
+                    precioFinal = precioBase - (precioBase * (promo.DescuentoPorcentaje / 100m));
+                }
+
                 var detalle = new DetallePedido
                 {
                     PedidoId = nuevoPedido.Id,
                     ProductoId = item.ProductoId,
                     Cantidad = item.Cantidad,
-                    PrecioUnitario = item.Producto!.Precio
+                    PrecioUnitario = precioFinal
                 };
                 _context.DetallesPedidos.Add(detalle);
 
