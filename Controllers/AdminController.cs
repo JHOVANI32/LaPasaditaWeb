@@ -49,11 +49,32 @@ namespace LaPasaditaWeb.Controllers
                 .Take(3)
                 .ToListAsync();
 
-            // Productos con stock bajo (menor o igual a 10)
+            // Productos agotados (Stock = 0)
+            var productosAgotados = await _context.Productos
+                .Where(p => p.Activo && p.Stock == 0)
+                .OrderBy(p => p.Nombre)
+                .ToListAsync();
+
+            // Productos con stock bajo (1 a 10)
             var productosStockBajo = await _context.Productos
-                .Where(p => p.Activo && p.Stock <= 10)
+                .Where(p => p.Activo && p.Stock > 0 && p.Stock <= 10)
                 .OrderBy(p => p.Stock)
                 .ToListAsync();
+
+            // Pedidos pendientes
+            var pedidosPendientes = await _context.Pedidos
+                .Where(p => p.Estado == "Pendiente" || p.Estado == "Preparando")
+                .OrderBy(p => p.FechaPedido)
+                .ToListAsync();
+
+            // Clientes registrados hoy
+            var clientesNuevosHoy = await _context.Usuarios
+                .Where(u => u.Rol == "Cliente" && u.FechaRegistro.Date == hoy)
+                .ToListAsync();
+
+            // Meta de ventas (ejemplo: 1000 pesos)
+            decimal metaVentasDia = 1000m;
+            bool metaAlcanzada = ventasDia >= metaVentasDia;
 
             ViewBag.PedidosHoy = pedidosHoy;
             ViewBag.VentasDia = ventasDia;
@@ -61,6 +82,11 @@ namespace LaPasaditaWeb.Controllers
             ViewBag.UsuariosActivos = usuariosActivos;
             ViewBag.PedidosRecientes = pedidosRecientes;
             ViewBag.ProductosStockBajo = productosStockBajo;
+            ViewBag.ProductosAgotados = productosAgotados;
+            ViewBag.PedidosPendientes = pedidosPendientes;
+            ViewBag.ClientesNuevosHoy = clientesNuevosHoy;
+            ViewBag.MetaVentasDia = metaVentasDia;
+            ViewBag.MetaAlcanzada = metaAlcanzada;
 
             return View();
         }
