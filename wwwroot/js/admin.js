@@ -15,6 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (categoriasTab) {
             categoriasTab.addEventListener("click", cargarCategorias);
         }
+        // Cargar configuración al cambiar de pestaña
+        const configuracionTab = document.getElementById("configuracion-tab");
+        if (configuracionTab) {
+            configuracionTab.addEventListener("click", cargarConfiguracion);
+        }
         
         // Agregar listener para guardar producto
         const formProd = document.getElementById("productoForm");
@@ -26,6 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const formCat = document.getElementById("categoriaForm");
         if (formCat) {
             formCat.addEventListener("submit", guardarCategoria);
+        }
+
+        // Agregar listener para guardar configuración
+        const formConfig = document.getElementById("configuracionForm");
+        if (formConfig) {
+            formConfig.addEventListener("submit", guardarConfiguracion);
         }
 
         // Agregar listener para cambiar estado de pedido
@@ -802,3 +813,62 @@ window.subirImagenProducto = function() {
         btn.innerHTML = originalText;
     });
 };
+
+// ==========================================
+// 5. SECCIÓN DE CONFIGURACIÓN DE LA TIENDA
+// ==========================================
+
+function cargarConfiguracion() {
+    fetch("/api/AdminConfiguracionApi")
+        .then(res => {
+            if (!res.ok) throw new Error("No se pudo cargar la configuración.");
+            return res.json();
+        })
+        .then(config => {
+            document.getElementById("configNombre").value = config.nombreTienda || "";
+            document.getElementById("configCostoEnvio").value = config.costoEnvioBase !== undefined ? config.costoEnvioBase : 15;
+            document.getElementById("configTelefono").value = config.telefonoContacto || "";
+            document.getElementById("configEmail").value = config.emailContacto || "";
+            document.getElementById("configDireccion").value = config.direccionFisica || "";
+            document.getElementById("configHorario").value = config.horarioAtencion || "";
+        })
+        .catch(err => {
+            console.error("Error al cargar config:", err);
+            mostrarNotificacionAdmin("No se pudo obtener la configuración.", "warning");
+        });
+}
+
+function guardarConfiguracion(e) {
+    e.preventDefault();
+
+    const payload = {
+        nombreTienda: document.getElementById("configNombre").value,
+        costoEnvioBase: parseFloat(document.getElementById("configCostoEnvio").value),
+        telefonoContacto: document.getElementById("configTelefono").value,
+        emailContacto: document.getElementById("configEmail").value,
+        direccionFisica: document.getElementById("configDireccion").value,
+        horarioAtencion: document.getElementById("configHorario").value
+    };
+
+    if (!payload.nombreTienda || isNaN(payload.costoEnvioBase)) {
+        mostrarNotificacionAdmin("Nombre de tienda y Costo de envío son obligatorios.", "warning");
+        return;
+    }
+
+    fetch("/api/AdminConfiguracionApi", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Error al guardar la configuración.");
+        return res.json();
+    })
+    .then(result => {
+        mostrarNotificacionAdmin(result.mensaje || "Configuración guardada correctamente.", "success");
+    })
+    .catch(err => {
+        console.error("Error al guardar config:", err);
+        mostrarNotificacionAdmin("Error al guardar configuración.", "danger");
+    });
+}

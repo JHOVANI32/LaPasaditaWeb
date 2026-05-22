@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using LaPasaditaWeb.Data;
 using LaPasaditaWeb.Models;
 
 namespace LaPasaditaWeb.Controllers;
@@ -8,13 +10,27 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
 
-    public HomeController(ILogger<HomeController> logger)
+    private readonly ApplicationDbContext _context;
+
+    public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
     {
         _logger = logger;
+        _context = context;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        var config = await _context.ConfiguracionTienda.FirstOrDefaultAsync();
+        if (config != null)
+        {
+            ViewBag.NombreTienda = config.NombreTienda;
+            ViewBag.CostoEnvioBase = config.CostoEnvioBase;
+        }
+        else
+        {
+            ViewBag.NombreTienda = "Abarrotes La Pasadita";
+            ViewBag.CostoEnvioBase = 15.00m;
+        }
         return View();
     }
 
@@ -24,8 +40,10 @@ public class HomeController : Controller
     }
 
     [Microsoft.AspNetCore.Authorization.Authorize]
-    public IActionResult Checkout()
+    public async Task<IActionResult> Checkout()
     {
+        var config = await _context.ConfiguracionTienda.FirstOrDefaultAsync();
+        ViewBag.CostoEnvioBase = config != null ? config.CostoEnvioBase : 15.00m;
         return View();
     }
 

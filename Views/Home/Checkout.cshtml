@@ -89,7 +89,7 @@
                 </div>
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-muted">Envío Local (Axtla):</span>
-                    <span class="fw-bold" id="resumen-envio">$15.00</span>
+                    <span class="fw-bold" id="resumen-envio">@ViewBag.CostoEnvioBase.ToString("C")</span>
                 </div>
                 <hr class="my-2">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -149,7 +149,7 @@
 
         let subtotalLocal = 0;
         let descuentoLocal = 0;
-        let costoEnvioLocal = 15.00;
+        let costoEnvioLocal = @(ViewBag.CostoEnvioBase.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
         let cuponCodigoAplicado = "";
 
         // Cargar ítems del carrito para resumen

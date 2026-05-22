@@ -34,6 +34,11 @@
                 <i class="bi bi-grid"></i> Categorías de Productos
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success border-0 px-4 py-3" id="configuracion-tab" data-bs-toggle="tab" data-bs-target="#configuracion-pane" type="button" role="tab" aria-controls="configuracion-pane" aria-selected="false">
+                <i class="bi bi-gear"></i> Configuración Tienda
+            </button>
+        </li>
     </ul>
 
     <!-- Contenido de las Pestañas -->
@@ -210,6 +215,53 @@
                     </table>
                 </div>
 
+            </div>
+        </div>
+
+        <!-- PESTAÑA 5: CONFIGURACIÓN DE LA TIENDA -->
+        <div class="tab-pane fade" id="configuracion-pane" role="tabpanel" aria-labelledby="configuracion-tab" tabindex="0">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
+                <div class="row align-items-center mb-4">
+                    <div class="col-12">
+                        <h4 class="fw-bold m-0"><i class="bi bi-gear-fill"></i> Ajustes Generales</h4>
+                        <p class="text-muted small m-0">Modifica el costo de envío local y otros datos de la tienda.</p>
+                    </div>
+                </div>
+
+                <form id="configuracionForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="configNombre" class="form-label small fw-bold text-muted">Nombre de la Tienda *</label>
+                            <input type="text" id="configNombre" class="form-control" required style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="configCostoEnvio" class="form-label small fw-bold text-muted">Costo de Envío Local ($) *</label>
+                            <input type="number" id="configCostoEnvio" class="form-control text-success fw-bold" step="0.01" min="0" required style="border-radius: var(--radius-sm);">
+                            <span class="text-muted" style="font-size: 0.7rem;">Este monto se cobrará automáticamente a todos los pedidos locales.</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="configTelefono" class="form-label small fw-bold text-muted">Teléfono de Contacto</label>
+                            <input type="tel" id="configTelefono" class="form-control" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="configEmail" class="form-label small fw-bold text-muted">Email de Contacto</label>
+                            <input type="email" id="configEmail" class="form-control" style="border-radius: var(--radius-sm);">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="configDireccion" class="form-label small fw-bold text-muted">Dirección Física</label>
+                        <input type="text" id="configDireccion" class="form-control" style="border-radius: var(--radius-sm);">
+                    </div>
+                    <div class="mb-4">
+                        <label for="configHorario" class="form-label small fw-bold text-muted">Horario de Atención</label>
+                        <input type="text" id="configHorario" class="form-control" placeholder="Ej. Lunes a Sábado de 8:00 AM a 8:00 PM" style="border-radius: var(--radius-sm);">
+                    </div>
+                    <button type="submit" class="btn btn-success fw-bold px-4 py-2 shadow-sm" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                        <i class="bi bi-save"></i> Guardar Configuración
+                    </button>
+                </form>
             </div>
         </div>
 
