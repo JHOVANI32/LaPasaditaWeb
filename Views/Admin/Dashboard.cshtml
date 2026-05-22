@@ -46,6 +46,38 @@
         
         <!-- PESTAÑA 1: RESUMEN DE VENTAS -->
         <div class="tab-pane fade show active" id="resumen-pane" role="tabpanel" aria-labelledby="resumen-tab" tabindex="0">
+            
+            <!-- ALERTA DE STOCK BAJO -->
+            @if (ViewBag.ProductosStockBajo != null)
+            {
+                var stockBajo = (IEnumerable<LaPasaditaWeb.Models.Producto>)ViewBag.ProductosStockBajo;
+                if (stockBajo.Any())
+                {
+                    <div class="alert alert-warning border-warning shadow-sm mb-4 d-flex gap-3 align-items-start" role="alert" style="border-radius: var(--radius-md); background-color: #fff3cd; color: #856404;">
+                        <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+                        <div class="w-100">
+                            <h5 class="fw-bold mb-1">¡Atención! Inventario Bajo</h5>
+                            <p class="mb-2 small">Los siguientes productos tienen <strong>10 unidades o menos</strong> en inventario. ¡Reabastécelos pronto para no perder ventas!</p>
+                            <ul class="list-group list-group-flush border-0 small mt-2">
+                                @foreach (var prod in stockBajo.Take(5))
+                                {
+                                    <li class="list-group-item bg-transparent px-0 py-1 border-0 d-flex justify-content-between align-items-center">
+                                        <span><strong>@prod.Nombre</strong></span>
+                                        <span class="badge bg-danger rounded-pill">@prod.Stock pzas</span>
+                                    </li>
+                                }
+                            </ul>
+                            @if (stockBajo.Count() > 5)
+                            {
+                                <div class="mt-2 text-muted small fw-bold">
+                                    Y @(stockBajo.Count() - 5) producto(s) más... Ve a la pestaña de "Inventario" para verlos todos.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
             <!-- Fila de Tarjetas Estadísticas -->
             <div class="row g-4 mb-4">
                 <div class="col-6 col-md-3">

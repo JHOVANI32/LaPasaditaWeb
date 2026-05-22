@@ -49,11 +49,18 @@ namespace LaPasaditaWeb.Controllers
                 .Take(3)
                 .ToListAsync();
 
+            // Productos con stock bajo (menor o igual a 10)
+            var productosStockBajo = await _context.Productos
+                .Where(p => p.Activo && p.Stock <= 10)
+                .OrderBy(p => p.Stock)
+                .ToListAsync();
+
             ViewBag.PedidosHoy = pedidosHoy;
             ViewBag.VentasDia = ventasDia;
             ViewBag.CatalogoActivo = catalogoActivo;
             ViewBag.UsuariosActivos = usuariosActivos;
             ViewBag.PedidosRecientes = pedidosRecientes;
+            ViewBag.ProductosStockBajo = productosStockBajo;
 
             return View();
         }
