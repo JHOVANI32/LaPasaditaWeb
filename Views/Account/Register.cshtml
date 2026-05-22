@@ -1,0 +1,78 @@
+@model LaPasaditaWeb.Models.Usuario
+
+@{
+    ViewData["Title"] = "Registro - La Pasadita";
+}
+
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-md-5">
+        <!-- Tarjeta de Registro Glassmorphism -->
+        <div class="card border-0 shadow-lg p-4 p-md-5 fade-in-up" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: var(--radius-md); border: 1px solid rgba(27, 77, 62, 0.08);">
+            
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 text-warning mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-person-plus fs-2 text-warning"></i>
+                </div>
+                <h2 class="fw-bold gradient-text">Crear Cuenta</h2>
+                <p class="text-muted small">Regístrate para realizar pagos rápidos y consultar tus pedidos en tiempo real.</p>
+            </div>
+
+            <!-- Resumen de Errores de Validación -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger border-0 small mb-4" style="border-radius: var(--radius-sm);">
+                    <div asp-validation-summary="All" class="text-danger list-unstyled mb-0"></div>
+                </div>
+            }
+
+            <form asp-action="Register" method="post" id="registerForm">
+                @Html.AntiForgeryToken()
+                
+                <!-- Capturar el token de invitado para migrar sus compras temporales -->
+                <input type="hidden" name="guestToken" id="guestTokenHidden" value="" />
+
+                <div class="form-floating mb-3">
+                    <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Nombre completo" required style="border-radius: var(--radius-sm); border: 1px solid #ced4da; box-shadow: none;">
+                    <label for="nombre"><i class="bi bi-person text-muted"></i> Nombre Completo</label>
+                    <span asp-validation-for="Nombre" class="text-danger small mt-1 d-block required-field-validator"></span>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="email" name="email" id="email" class="form-control" placeholder="correo@ejemplo.com" required style="border-radius: var(--radius-sm); border: 1px solid #ced4da; box-shadow: none;">
+                    <label for="email"><i class="bi bi-envelope text-muted"></i> Correo Electrónico</label>
+                    <span asp-validation-for="Email" class="text-danger small mt-1 d-block required-field-validator"></span>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Crea tu contraseña" required style="border-radius: var(--radius-sm); border: 1px solid #ced4da; box-shadow: none;">
+                    <label for="password"><i class="bi bi-key text-muted"></i> Contraseña</label>
+                    <span asp-validation-for="PasswordHash" class="text-danger small mt-1 d-block required-field-validator"></span>
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100 py-3 fw-bold mb-3 shadow-sm text-white" style="border-radius: var(--radius-sm); background-color: var(--accent); border: none;">
+                    <i class="bi bi-check-circle"></i> Registrarse y Entrar
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <span class="text-muted small">¿Ya tienes cuenta?</span>
+                <a asp-action="Login" class="text-success fw-bold small text-decoration-none">Inicia sesión aquí</a>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        // Adjuntar token de invitado al registrarse para no perder el carrito
+        document.getElementById("registerForm").addEventListener("submit", function() {
+            const token = localStorage.getItem("lapasadita_guest_token");
+            if (token) {
+                document.getElementById("guestTokenHidden").value = token;
+            }
+        });
+    </script>
+}

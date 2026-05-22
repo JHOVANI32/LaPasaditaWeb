@@ -1,0 +1,326 @@
+@{
+    ViewData["Title"] = "Confirmar Compra - La Pasadita";
+}
+
+<div class="container py-5 fade-in-up">
+    <div class="row g-5">
+        <!-- Columna Izquierda: Formulario de Envío y Pago -->
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm p-4 p-md-5 bg-white" style="border-radius: var(--radius-md);">
+                <h3 class="fw-bold mb-4 gradient-text"><i class="bi bi-truck"></i> Detalles de Entrega</h3>
+                
+                <form id="checkoutForm">
+                    <!-- Datos de Contacto -->
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="nombreCliente" class="form-label small fw-bold text-muted">Nombre del Cliente *</label>
+                            <input type="text" id="nombreCliente" class="form-control" required placeholder="Nombre y Apellidos" value="@User.Identity?.Name" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telefonoCliente" class="form-label small fw-bold text-muted">Teléfono de Contacto (WhatsApp) *</label>
+                            <input type="tel" id="telefonoCliente" class="form-control" required placeholder="Ej. 4891234567" style="border-radius: var(--radius-sm);">
+                            <span class="text-muted" style="font-size: 0.7rem;">Usado para notificaciones de cambio de estado.</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="emailCliente" class="form-label small fw-bold text-muted">Correo Electrónico *</label>
+                        <input type="email" id="emailCliente" class="form-control" required placeholder="correo@ejemplo.com" value="@(User.Identity?.IsAuthenticated == true ? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value : "")" style="border-radius: var(--radius-sm);">
+                    </div>
+
+                    <!-- Dirección de Envío -->
+                    <div class="mb-4">
+                        <label for="direccionEnvio" class="form-label small fw-bold text-muted">Dirección de Entrega en Axtla *</label>
+                        <textarea id="direccionEnvio" class="form-control" rows="3" required placeholder="Calle, Número de casa, Colonia o Barrio (ej. Barrio San José), referencias de ubicación..." style="border-radius: var(--radius-sm);"></textarea>
+                    </div>
+
+                    <!-- Método de Pago -->
+                    <h3 class="fw-bold mb-3 mt-5 gradient-text"><i class="bi bi-wallet2"></i> Método de Pago</h3>
+                    <div class="card border-0 p-3 bg-light mb-4" style="border-radius: var(--radius-sm);">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="metodoPago" id="pagoEfectivo" value="Efectivo" checked>
+                            <label class="form-check-label fw-bold" for="pagoEfectivo">
+                                <i class="bi bi-cash-stack text-success"></i> Pago en Efectivo (Contra Entrega)
+                            </label>
+                            <div class="text-muted small ps-4">Paga al recibir tus productos en la puerta de tu hogar.</div>
+                        </div>
+
+                    </div>
+
+                    <button type="submit" class="btn btn-warning text-white w-100 py-3 fw-bold fs-5 shadow-sm" style="border-radius: var(--radius-sm); background-color: var(--accent); border: none;">
+                        <i class="bi bi-check-circle-fill"></i> Confirmar y Realizar Pedido
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Resumen del Pedido -->
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm p-4 bg-white sticky-top" style="border-radius: var(--radius-md); top: 100px;">
+                <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-receipt"></i> Resumen de Compra</h4>
+                
+                <!-- Listado de Artículos (AJAX) -->
+                <div id="checkout-articulos" class="mb-4" style="max-height: 250px; overflow-y: auto;">
+                    <!-- Se carga dinámicamente -->
+                </div>
+
+                <hr>
+
+                <!-- Campo de Cupón de Descuento -->
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted">¿Tienes un cupón de descuento?</label>
+                    <div class="input-group">
+                        <input type="text" id="codigoCupon" class="form-control" placeholder="Ej. BIENVENIDA10" style="border-radius: var(--radius-sm) 0 0 var(--radius-sm); text-transform: uppercase;">
+                        <button class="btn btn-success fw-bold" type="button" id="btn-aplicar-cupon" style="border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background-color: var(--primary); border: none;">
+                            Aplicar
+                        </button>
+                    </div>
+                    <div id="cupon-mensaje" class="small mt-1 d-none"></div>
+                </div>
+
+                <!-- Desglose de Totales -->
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Subtotal:</span>
+                    <span class="fw-bold" id="resumen-subtotal">$0.00</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2 text-danger d-none" id="row-descuento">
+                    <span class="text-danger">Descuento del Cupón:</span>
+                    <span class="fw-bold" id="resumen-descuento">-$0.00</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">Envío Local (Axtla):</span>
+                    <span class="fw-bold" id="resumen-envio">$15.00</span>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fw-bold fs-5 text-dark">Total:</span>
+                    <span class="fw-extrabold fs-4 text-success" style="font-weight: 800;" id="resumen-total">$0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE ÉXITO AL CONFIRMAR COMPRA -->
+<div class="modal fade" id="modalExito" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg text-center" style="border-radius: var(--radius-md);">
+            <div class="modal-body p-5">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 text-success mb-4" style="width: 80px; height: 80px;">
+                    <i class="bi bi-check-lg" style="font-size: 3.5rem;"></i>
+                </div>
+                <h2 class="fw-bold gradient-text mb-3">¡Pedido Recibido!</h2>
+                <p class="text-muted mb-4">
+                    Tu pedido ha sido registrado con éxito en Abarrotes <strong>La Pasadita</strong>.
+                </p>
+                <div class="bg-light p-3 rounded mb-4 text-start small">
+                    <div><strong>Número de Pedido:</strong> <span id="exito-pedido-id">#0</span></div>
+                    <div class="mt-1"><strong>Total a Pagar:</strong> <span id="exito-pedido-total" class="fw-bold text-success">$0.00</span></div>
+                    <div class="mt-1"><strong>Método:</strong> Pago en efectivo.</div>
+                </div>
+                
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a href="/Cliente/Dashboard" class="btn btn-success w-100 py-3 fw-bold mb-2 shadow-sm" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                        <i class="bi bi-card-list"></i> Ver Estado de Pedido
+                    </a>
+                }
+                else
+                {
+                    <div class="alert alert-info border-0 small mb-3">
+                        Regístrate o Inicia Sesión con tu correo para rastrear futuros pedidos e historiales de estado.
+                    </div>
+                }
+                <a href="/" class="btn btn-outline-secondary w-100 py-2 fw-semibold" style="border-radius: var(--radius-sm);">
+                    Volver a la Tienda
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarResumenCompra();
+            configurarCupon();
+            configurarFormularioCheckout();
+        });
+
+        let subtotalLocal = 0;
+        let descuentoLocal = 0;
+        let costoEnvioLocal = 15.00;
+        let cuponCodigoAplicado = "";
+
+        // Cargar ítems del carrito para resumen
+        function cargarResumenCompra() {
+            const token = localStorage.getItem("lapasadita_guest_token");
+            const usuarioId = window.UsuarioId;
+
+            let url = `/api/CarritoApi?`;
+            if (usuarioId) url += `usuarioId=${usuarioId}`;
+            else url += `token=${token}`;
+
+            const contenedor = document.getElementById("checkout-articulos");
+            if (!contenedor) return;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(items => {
+                    if (items.length === 0) {
+                        alert("Tu carrito está vacío. Serás redirigido al catálogo.");
+                        window.location.href = "/";
+                        return;
+                    }
+
+                    let html = "";
+                    let totalItems = 0;
+                    subtotalLocal = 0;
+
+                    items.forEach(item => {
+                        subtotalLocal += item.subtotal;
+                        html += `
+                            <div class="d-flex align-items-center justify-content-between mb-3 small">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-secondary">${item.cantidad}x</span>
+                                    <span class="text-dark fw-semibold">${item.nombreProducto}</span>
+                                </div>
+                                <span class="fw-bold text-muted">$${item.subtotal.toFixed(2)}</span>
+                            </div>
+                        `;
+                    });
+
+                    contenedor.innerHTML = html;
+                    actualizarTotalesUI();
+                })
+                .catch(err => console.error("Error al cargar resumen:", err));
+        }
+
+        function actualizarTotalesUI() {
+            document.getElementById("resumen-subtotal").textContent = `$${subtotalLocal.toFixed(2)}`;
+            
+            const total = Math.max(0, subtotalLocal - descuentoLocal) + costoEnvioLocal;
+            
+            if (descuentoLocal > 0) {
+                document.getElementById("row-descuento").classList.remove("d-none");
+                document.getElementById("resumen-descuento").textContent = `-$${descuentoLocal.toFixed(2)}`;
+            } else {
+                document.getElementById("row-descuento").classList.add("d-none");
+            }
+
+            document.getElementById("resumen-total").textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Lógica de validación de cupones asíncrona
+        function configurarCupon() {
+            const btn = document.getElementById("btn-aplicar-cupon");
+            const input = document.getElementById("codigoCupon");
+            const msg = document.getElementById("cupon-mensaje");
+
+            if (!btn) return;
+
+            btn.addEventListener("click", () => {
+                const codigo = input.value.trim();
+                if (!codigo) return;
+
+                msg.className = "small mt-1 text-muted";
+                msg.textContent = "Validando cupón...";
+                msg.classList.remove("d-none");
+
+                fetch(`/api/CheckoutApi/validar-cupon?codigo=${encodeURIComponent(codigo)}`)
+                    .then(res => {
+                        if (!res.ok) {
+                            return res.json().then(err => { throw new Error(err.mensaje); });
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        msg.className = "small mt-1 text-success fw-bold";
+                        
+                        if (data.tipoDescuento === "Porcentaje") {
+                            descuentoLocal = subtotalLocal * (data.valor / 100);
+                            msg.textContent = `¡Cupón aplicado! Descuento del ${data.valor}% (-$${descuentoLocal.toFixed(2)})`;
+                        } else {
+                            descuentoLocal = data.valor;
+                            msg.textContent = `¡Cupón aplicado! Descuento fijo de -$${descuentoLocal.toFixed(2)}`;
+                        }
+                        
+                        cuponCodigoAplicado = data.codigo;
+                        actualizarTotalesUI();
+                    })
+                    .catch(err => {
+                        msg.className = "small mt-1 text-danger";
+                        msg.textContent = err.message || "Error al validar cupón.";
+                        descuentoLocal = 0;
+                        cuponCodigoAplicado = "";
+                        actualizarTotalesUI();
+                    });
+            });
+        }
+
+        // Lógica de finalización de compra asíncrona (AJAX)
+        function configurarFormularioCheckout() {
+            const form = document.getElementById("checkoutForm");
+            if (!form) return;
+
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                // Validar usando nuestra clase RequiredFieldValidator
+                const validator = new RequiredFieldValidator("checkoutForm");
+                if (!validator.validate()) {
+                    return;
+                }
+
+                const token = localStorage.getItem("lapasadita_guest_token");
+                const usuarioId = window.UsuarioId;
+                
+                const nombreCliente = document.getElementById("nombreCliente").value;
+                const emailCliente = document.getElementById("emailCliente").value;
+                const telefonoCliente = document.getElementById("telefonoCliente").value;
+                const direccionEnvio = document.getElementById("direccionEnvio").value;
+                const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+
+                const payload = {
+                    token: token,
+                    usuarioId: usuarioId,
+                    nombreCliente,
+                    emailCliente,
+                    telefonoCliente,
+                    direccionEnvio,
+                    metodoPago,
+                    codigoCupon: cuponCodigoAplicado
+                };
+
+                fetch("/api/CheckoutApi", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(err => { throw new Error(err.mensaje || "Error al procesar el pedido."); });
+                    }
+                    return res.json();
+                })
+                .then(result => {
+                    // Limpiar token de invitado del navegador si corresponde
+                    if (!usuarioId) {
+                        localStorage.removeItem("lapasadita_guest_token");
+                    }
+
+                    // Mostrar modal de éxito
+                    document.getElementById("exito-pedido-id").textContent = `#${result.pedidoId}`;
+                    document.getElementById("exito-pedido-total").textContent = `$${result.total.toFixed(2)}`;
+                    
+                    const modalEl = document.getElementById("modalExito");
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                })
+                .catch(err => {
+                    alert(err.message || "Ocurrió un error inesperado al realizar el pedido.");
+                });
+            });
+        }
+    </script>
+}

@@ -1,0 +1,76 @@
+@model LaPasaditaWeb.Models.Usuario
+
+@{
+    ViewData["Title"] = "Iniciar Sesión - La Pasadita";
+}
+
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-5">
+        <!-- Tarjeta de Login Glassmorphism -->
+        <div class="card border-0 shadow-lg p-4 p-md-5 fade-in-up" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: var(--radius-md); border: 1px solid rgba(27, 77, 62, 0.08);">
+            
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 text-success mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-person-lock fs-2"></i>
+                </div>
+                <h2 class="fw-bold gradient-text">¡Hola de nuevo!</h2>
+                <p class="text-muted small">Ingresa tus credenciales para acceder a tu panel de La Pasadita.</p>
+            </div>
+
+            <!-- Resumen de Errores de Validación -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger border-0 small mb-4" style="border-radius: var(--radius-sm);">
+                    <div asp-validation-summary="All" class="text-danger list-unstyled mb-0"></div>
+                </div>
+            }
+
+            <form asp-action="Login" method="post" id="loginForm">
+                @Html.AntiForgeryToken()
+                
+                <!-- Capturar el token de invitado para fusionar el carrito al loguearse -->
+                <input type="hidden" name="guestToken" id="guestTokenHidden" value="" />
+                <!-- URL de retorno en caso de checkout -->
+                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                <div class="form-floating mb-3">
+                    <input type="email" name="email" id="email" class="form-control" placeholder="correo@ejemplo.com" required style="border-radius: var(--radius-sm); border: 1px solid #ced4da; box-shadow: none;">
+                    <label for="email"><i class="bi bi-envelope text-muted"></i> Correo Electrónico</label>
+                    <span asp-validation-for="Email" class="text-danger small mt-1 d-block required-field-validator"></span>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Contraseña" required style="border-radius: var(--radius-sm); border: 1px solid #ced4da; box-shadow: none;">
+                    <label for="password"><i class="bi bi-key text-muted"></i> Contraseña</label>
+                    <span asp-validation-for="PasswordHash" class="text-danger small mt-1 d-block required-field-validator"></span>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 py-3 fw-bold mb-3 shadow-sm" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                    <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <span class="text-muted small">¿No tienes cuenta?</span>
+                <a asp-action="Register" class="text-success fw-bold small text-decoration-none">Regístrate aquí</a>
+            </div>
+
+
+            
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        // Al enviar el formulario, adjuntamos dinámicamente el token de invitado del almacenamiento local
+        document.getElementById("loginForm").addEventListener("submit", function() {
+            const token = localStorage.getItem("lapasadita_guest_token");
+            if (token) {
+                document.getElementById("guestTokenHidden").value = token;
+            }
+        });
+    </script>
+}

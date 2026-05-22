@@ -1,0 +1,429 @@
+@{
+    ViewData["Title"] = "Panel de Administración - La Pasadita";
+}
+
+<div class="container py-4 fade-in-up">
+    <!-- Encabezado del Dashboard -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="fw-bold gradient-text m-0"><i class="bi bi-speedometer2"></i> Dashboard de Administración</h1>
+            <p class="text-muted m-0">Administra el inventario, los precios y monitorea las ventas de La Pasadita.</p>
+        </div>
+        <span class="badge bg-danger px-3 py-2 fs-6" style="border-radius: var(--radius-sm);">Panel de Control</span>
+    </div>
+
+    <!-- Menú de Navegación del Panel (Pestañas Bootstrap) -->
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist" style="border-bottom: 2px solid rgba(27, 77, 62, 0.1);">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold text-success border-0 px-4 py-3" id="resumen-tab" data-bs-toggle="tab" data-bs-target="#resumen-pane" type="button" role="tab" aria-controls="resumen-pane" aria-selected="true">
+                <i class="bi bi-graph-up"></i> Resumen de Ventas
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success border-0 px-4 py-3" id="inventario-tab" data-bs-toggle="tab" data-bs-target="#inventario-pane" type="button" role="tab" aria-controls="inventario-pane" aria-selected="false">
+                <i class="bi bi-box-seam"></i> Inventario de Productos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success border-0 px-4 py-3" id="pedidos-tab" data-bs-toggle="tab" data-bs-target="#pedidos-pane" type="button" role="tab" aria-controls="pedidos-pane" aria-selected="false">
+                <i class="bi bi-receipt"></i> Pedidos Recibidos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success border-0 px-4 py-3" id="categorias-tab" data-bs-toggle="tab" data-bs-target="#categorias-pane" type="button" role="tab" aria-controls="categorias-pane" aria-selected="false">
+                <i class="bi bi-grid"></i> Categorías de Productos
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de las Pestañas -->
+    <div class="tab-content" id="adminTabsContent">
+        
+        <!-- PESTAÑA 1: RESUMEN DE VENTAS -->
+        <div class="tab-pane fade show active" id="resumen-pane" role="tabpanel" aria-labelledby="resumen-tab" tabindex="0">
+            <!-- Fila de Tarjetas Estadísticas -->
+            <div class="row g-4 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md); border-left: 5px solid var(--primary);">
+                        <div class="text-muted small fw-bold text-uppercase">Pedidos Hoy</div>
+                        <div class="fs-2 fw-extrabold text-success mt-2">@ViewBag.PedidosHoy</div>
+                        <div class="small text-muted mt-1"><i class="bi bi-arrow-up text-success"></i> +12% vs ayer</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md); border-left: 5px solid var(--accent);">
+                        <div class="text-muted small fw-bold text-uppercase">Ventas del Día</div>
+                        <div class="fs-2 fw-extrabold text-warning mt-2">@ViewBag.VentasDia.ToString("C")</div>
+                        <div class="small text-muted mt-1"><i class="bi bi-currency-dollar text-success"></i> Envío local incl.</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md); border-left: 5px solid #0d6efd;">
+                        <div class="text-muted small fw-bold text-uppercase">Catálogo Activo</div>
+                        <div class="fs-2 fw-extrabold text-primary mt-2">@ViewBag.CatalogoActivo art.</div>
+                        <div class="small text-muted mt-1"><i class="bi bi-grid text-primary"></i> 5 categorías</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md); border-left: 5px solid #6c757d;">
+                        <div class="text-muted small fw-bold text-uppercase">Usuarios Activos</div>
+                        <div class="fs-2 fw-extrabold text-secondary mt-2">@ViewBag.UsuariosActivos</div>
+                        <div class="small text-muted mt-1"><i class="bi bi-people"></i> Clientes registrados</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficas o Historial Simulado -->
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
+                <h5 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Actividad Reciente del Sistema</h5>
+                <ul class="list-group list-group-flush small">
+                    @if (ViewBag.PedidosRecientes != null)
+                    {
+                        var recientes = (IEnumerable<LaPasaditaWeb.Models.Pedido>)ViewBag.PedidosRecientes;
+                        if (recientes.Any())
+                        {
+                            foreach (var p in recientes)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent py-3">
+                                    <span><i class="bi bi-cart-check text-success me-2"></i> Nuevo pedido registrado: <strong>@p.NombreCliente</strong> por @p.Total.ToString("C")</span>
+                                    <span class="text-muted">@p.FechaPedido.ToLocalTime().ToString("g")</span>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="list-group-item bg-transparent text-muted text-center py-3">No hay actividad reciente.</li>
+                        }
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: INVENTARIO (CRUD COMPLETO DE PRODUCTOS) -->
+        <div class="tab-pane fade" id="inventario-pane" role="tabpanel" aria-labelledby="inventario-tab" tabindex="0">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
+                
+                <!-- Acciones Superiores de la Tabla -->
+                <div class="row align-items-center mb-4 gap-3 gap-md-0">
+                    <div class="col-md-6">
+                        <h4 class="fw-bold m-0"><i class="bi bi-grid-3x3-gap"></i> Catálogo Físico de Productos</h4>
+                        <p class="text-muted small m-0">Añade nuevos productos o edita el precio y stock en tiempo real mediante peticiones AJAX.</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <button class="btn btn-success fw-bold px-4 py-2 shadow-sm" onclick="abrirModalCrear()" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                            <i class="bi bi-plus-circle"></i> Agregar Nuevo Producto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla de Productos -->
+                <div class="table-responsive">
+                    <table class="table table-hover border-0">
+                        <thead class="table-success" style="background-color: var(--primary-glow);">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th>Detalle del Producto</th>
+                                <th>Categoría</th>
+                                <th>Precio Unitario</th>
+                                <th>Stock</th>
+                                <th>Estado</th>
+                                <th style="width: 120px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-productos-body">
+                            <!-- Se renderiza asíncronamente con JavaScript (admin.js) -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: GESTIÓN DE PEDIDOS RECIBIDOS -->
+        <div class="tab-pane fade" id="pedidos-pane" role="tabpanel" aria-labelledby="pedidos-tab" tabindex="0">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                    <div>
+                        <h4 class="fw-bold m-0"><i class="bi bi-receipt"></i> Historial General de Pedidos</h4>
+                        <p class="text-muted small m-0">Monitorea y cambia los estados de entrega en tiempo real de todos los clientes.</p>
+                    </div>
+                    <button class="btn btn-outline-success fw-bold btn-sm" onclick="cargarPedidosAdmin()" style="border-radius: var(--radius-sm);">
+                        <i class="bi bi-arrow-clockwise"></i> Recargar Pedidos
+                    </button>
+                </div>
+
+                <!-- Tabla de Pedidos -->
+                <div class="table-responsive">
+                    <table class="table table-hover border-0">
+                        <thead class="table-success">
+                            <tr>
+                                <th style="width: 90px;">Pedido</th>
+                                <th>Cliente</th>
+                                <th>Fecha y Hora</th>
+                                <th>Método Pago</th>
+                                <th>Estado</th>
+                                <th>Monto Total</th>
+                                <th style="width: 130px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-pedidos-body">
+                            <!-- Se renderiza asíncronamente vía AJAX (admin.js) -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 4: GESTIÓN DE CATEGORÍAS -->
+        <div class="tab-pane fade" id="categorias-pane" role="tabpanel" aria-labelledby="categorias-tab" tabindex="0">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
+                
+                <!-- Acciones Superiores de la Tabla -->
+                <div class="row align-items-center mb-4 gap-3 gap-md-0">
+                    <div class="col-md-6">
+                        <h4 class="fw-bold m-0"><i class="bi bi-grid"></i> Catálogo de Categorías</h4>
+                        <p class="text-muted small m-0">Administra las categorías de productos disponibles en la tienda.</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <button class="btn btn-success fw-bold px-4 py-2 shadow-sm" onclick="abrirModalCrearCategoria()" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                            <i class="bi bi-plus-circle"></i> Agregar Nueva Categoría
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla de Categorías -->
+                <div class="table-responsive">
+                    <table class="table table-hover border-0">
+                        <thead class="table-success" style="background-color: var(--primary-glow);">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th>Nombre de la Categoría</th>
+                                <th>Descripción</th>
+                                <th>Productos Activos</th>
+                                <th>Estado</th>
+                                <th style="width: 120px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-categorias-body">
+                            <!-- Se renderiza asíncronamente con JavaScript (admin.js) -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL BOOTSTRAP PARA CREAR Y EDITAR PRODUCTOS (AJAX) -->
+<div class="modal fade" id="modalProducto" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalProductoTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-md);">
+            <div class="modal-header bg-success text-white py-3" style="background-color: var(--primary) !important; border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+                <h5 class="modal-title fw-bold" id="modalProductoTitulo">Nuevo Producto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="productoForm">
+                <div class="modal-body p-4">
+                    <!-- Campo Oculto para el ID -->
+                    <input type="hidden" id="productoId" />
+
+                    <!-- Nombre del Producto -->
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label small fw-bold text-muted">Nombre del Producto *</label>
+                        <input type="text" id="nombre" class="form-control" placeholder="Ej. Leche Entera Lala 1L" required style="border-radius: var(--radius-sm);">
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label small fw-bold text-muted">Descripción</label>
+                        <textarea id="descripcion" class="form-control" rows="2" placeholder="Detalles de calidad del producto..." style="border-radius: var(--radius-sm);"></textarea>
+                    </div>
+
+                    <!-- Fila Categoria y Precio -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label for="categoriaId" class="form-label small fw-bold text-muted">Categoría *</label>
+                            <select id="categoriaId" class="form-select" required style="border-radius: var(--radius-sm);">
+                                <!-- Cargado dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label for="precio" class="form-label small fw-bold text-muted">Precio Unitario ($) *</label>
+                            <input type="number" id="precio" class="form-control" step="0.01" min="0.1" placeholder="0.00" required style="border-radius: var(--radius-sm);">
+                        </div>
+                    </div>
+
+                    <!-- Fila Stock y URL Imagen -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label for="stock" class="form-label small fw-bold text-muted">Stock Inicial *</label>
+                            <input type="number" id="stock" class="form-control" min="0" placeholder="0" required style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-6">
+                            <label for="activo" class="form-label small fw-bold text-muted d-block">Estado</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="activo" checked>
+                                <label class="form-check-label text-muted small" for="activo">Catálogo Activo</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cargar o URL de la Imagen -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted d-block">Imagen de Referencia del Producto</label>
+                        <div class="input-group mb-2">
+                            <input type="file" id="imagenFile" class="form-control" accept="image/*" style="border-radius: var(--radius-sm) 0 0 var(--radius-sm);">
+                            <button class="btn btn-outline-secondary" type="button" id="btnSubirImagen" onclick="subirImagenProducto()" style="border-radius: 0 var(--radius-sm) var(--radius-sm) 0;">
+                                <i class="bi bi-upload"></i> Subir
+                            </button>
+                        </div>
+                        <input type="text" id="imagenUrl" class="form-control mb-2" placeholder="Ej. /images/productos/leche.jpg" style="border-radius: var(--radius-sm);">
+                        <span class="text-muted small" style="font-size: 0.75rem;">Puedes subir un archivo desde tu equipo o ingresar/pegar una URL directamente.</span>
+                        <!-- Vista previa de la imagen -->
+                        <div class="mt-2 text-center d-none" id="previewContainer">
+                            <img id="imagenPreview" src="" alt="Vista previa de imagen" class="img-thumbnail" style="max-height: 120px; object-fit: contain;">
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);">
+                    <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: var(--radius-sm);">Cancelar</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL BOOTSTRAP PARA CREAR Y EDITAR CATEGORÍAS (AJAX) -->
+<div class="modal fade" id="modalCategoria" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalCategoriaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-md);">
+            <div class="modal-header bg-success text-white py-3" style="background-color: var(--primary) !important; border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+                <h5 class="modal-title fw-bold" id="modalCategoriaTitulo">Nueva Categoría</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="categoriaForm">
+                <div class="modal-body p-4">
+                    <!-- Campo Oculto para el ID -->
+                    <input type="hidden" id="categoriaIdField" />
+
+                    <!-- Nombre de la Categoría -->
+                    <div class="mb-3">
+                        <label for="categoriaNombre" class="form-label small fw-bold text-muted">Nombre de la Categoría *</label>
+                        <input type="text" id="categoriaNombre" class="form-control" placeholder="Ej. Bebidas, Lácteos" required style="border-radius: var(--radius-sm);">
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label for="categoriaDescripcion" class="form-label small fw-bold text-muted">Descripción</label>
+                        <textarea id="categoriaDescripcion" class="form-control" rows="3" placeholder="Descripción de los productos incluidos..." style="border-radius: var(--radius-sm);"></textarea>
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="mb-3">
+                        <label for="categoriaActivo" class="form-label small fw-bold text-muted d-block">Estado</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="categoriaActivo" checked>
+                            <label class="form-check-label text-muted small" for="categoriaActivo">Categoría Activa</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);">
+                    <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: var(--radius-sm);">Cancelar</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                        <i class="bi bi-save"></i> Guardar Categoría
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL BOOTSTRAP PARA GESTIONAR ESTADO DE PEDIDOS (AJAX) -->
+<div class="modal fade" id="modalPedidoAdmin" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalPedidoAdminTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-md);">
+            <div class="modal-header bg-dark text-white py-3" style="border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+                <h5 class="modal-title fw-bold" id="modalPedidoAdminTitulo">Gestionar Pedido <span id="detPedidoIdAdmin">#0</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="pedidoEstadoForm">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="pedidoIdAdmin" />
+
+                    <div class="row g-4">
+                        <!-- Detalles del Pedido -->
+                        <div class="col-md-6 border-end">
+                            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-person-fill"></i> Datos del Cliente</h5>
+                            <table class="table table-sm table-borderless small">
+                                <tr>
+                                    <td class="fw-bold text-muted" style="width: 100px;">Cliente:</td>
+                                    <td id="detPedidoCliente" class="text-dark fw-semibold">Nombre del Cliente</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Teléfono:</td>
+                                    <td id="detPedidoTelefono" class="text-dark">Teléfono</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Dirección:</td>
+                                    <td id="detPedidoDireccion" class="text-dark text-wrap">Dirección de Envío</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Total Pago:</td>
+                                    <td id="detPedidoTotal" class="text-success fw-bold fs-6">$0.00</td>
+                                </tr>
+                            </table>
+
+                            <h5 class="fw-bold mb-2 mt-4 text-dark"><i class="bi bi-basket3-fill"></i> Productos Solicitados</h5>
+                            <div id="pedidoArticulosListaAdmin" class="pe-2" style="max-height: 180px; overflow-y: auto;">
+                                <!-- Cargado dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Formulario de Cambio de Estado y Bitácora -->
+                        <div class="col-md-6 ps-md-4">
+                            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-truck-flatbed"></i> Cambiar Estado de Entrega</h5>
+                            
+                            <div class="mb-3">
+                                <label for="estadoNuevo" class="form-label small fw-bold text-muted">Seleccionar Estado *</label>
+                                <select id="estadoNuevo" class="form-select" required style="border-radius: var(--radius-sm);">
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="Preparando">Preparando</option>
+                                    <option value="En Camino">En Camino</option>
+                                    <option value="Entregado">Entregado</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notasCambio" class="form-label small fw-bold text-muted">Notas de Bitácora (cliente, etc.)</label>
+                                <textarea id="notasCambio" class="form-control" rows="2" placeholder="Ej. El pedido salió en la moto de reparto de Juan." style="border-radius: var(--radius-sm);"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 mb-4" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
+                                <i class="bi bi-save"></i> Guardar Cambios
+                            </button>
+
+                            <h5 class="fw-bold mb-2 text-dark"><i class="bi bi-clock-history"></i> Bitácora Histórica</h5>
+                            <div class="list-group list-group-flush border rounded overflow-hidden" id="pedidoBitacoraAdmin" style="max-height: 140px; overflow-y: auto;">
+                                <!-- Cargado dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);">
+                    <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: var(--radius-sm);">Cerrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+}

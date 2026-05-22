@@ -1,0 +1,379 @@
+@{
+    ViewData["Title"] = "Mis Pedidos - La Pasadita";
+}
+
+<div class="container py-4 fade-in-up">
+    <!-- Encabezado del Dashboard -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="fw-bold gradient-text m-0"><i class="bi bi-person-badge"></i> Panel de Miembro</h1>
+            <p class="text-muted m-0">Bienvenido, <strong class="text-dark">@User.Identity?.Name</strong>. Rastrea tus pedidos y consulta tus compras en Axtla de Terrazas.</p>
+        </div>
+        <button class="btn btn-outline-success fw-bold" onclick="cargarPedidosCliente()" style="border-radius: var(--radius-sm);">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar Historial
+        </button>
+    </div>
+
+    <div class="row g-4">
+        <!-- Columna Izquierda: Historial de Compras -->
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md); min-height: 400px;">
+                <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-clock-history"></i> Historial de Pedidos</h4>
+                
+                <div id="lista-pedidos-cliente" class="d-flex flex-column gap-3" style="max-height: 500px; overflow-y: auto;">
+                    <!-- Cargado dinámicamente vía AJAX (Fetch) -->
+                    <div class="text-center py-5 text-muted">
+                        <div class="spinner-border text-success mb-3" role="status"></div>
+                        <div>Cargando tus pedidos...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Detalle de Pedido Seleccionado + Stepper de Seguimiento -->
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md); min-height: 400px;" id="detalle-pedido-card">
+                <div class="text-center py-5 text-muted" id="detalle-vacio-mensaje">
+                    <i class="bi bi-receipt-cutoff display-1 text-muted opacity-50 mb-3"></i>
+                    <h5>Selecciona un pedido para ver el detalle</h5>
+                    <p class="small">Haz clic en cualquier pedido de la lista de la izquierda para ver su desglose de artículos y su estado de entrega en tiempo real.</p>
+                </div>
+
+                <!-- Contenedor del Detalle del Pedido (Oculto inicialmente) -->
+                <div id="detalle-pedido-contenido" class="d-none">
+                    <div class="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3">
+                        <div>
+                            <h4 class="fw-bold m-0 text-success">Pedido <span id="det-pedido-id">#0</span></h4>
+                            <span class="text-muted small" id="det-pedido-fecha">Cargando fecha...</span>
+                        </div>
+                        <span class="badge fs-6 px-3 py-2" id="det-pedido-estado">Pendiente</span>
+                    </div>
+
+                    <!-- Rastreador de Estado Visual (Stepper Premium) -->
+                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-geo-alt"></i> Estado del Envío</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-5 mt-4 stepper-wrapper px-3">
+                        <div class="stepper-item" id="step-pendiente">
+                            <div class="step-counter"><i class="bi bi-clock"></i></div>
+                            <div class="step-name small mt-2 text-center">Pendiente</div>
+                        </div>
+                        <div class="stepper-item" id="step-preparando">
+                            <div class="step-counter"><i class="bi bi-egg-fried"></i></div>
+                            <div class="step-name small mt-2 text-center">Preparando</div>
+                        </div>
+                        <div class="stepper-item" id="step-en-camino">
+                            <div class="step-counter"><i class="bi bi-bicycle"></i></div>
+                            <div class="step-name small mt-2 text-center">En Camino</div>
+                        </div>
+                        <div class="stepper-item" id="step-entregado">
+                            <div class="step-counter"><i class="bi bi-check-lg"></i></div>
+                            <div class="step-name small mt-2 text-center">Entregado</div>
+                        </div>
+                    </div>
+
+                    <!-- Resumen de Productos -->
+                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-basket3"></i> Artículos Comprados</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="det-articulos-body">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Datos de Envío y Pago -->
+                    <div class="row g-3 p-3 bg-light rounded mb-4">
+                        <div class="col-md-6 border-end">
+                            <div class="small fw-bold text-muted mb-1"><i class="bi bi-geo-fill"></i> Dirección de Envío:</div>
+                            <div class="small" id="det-direccion">Cargando dirección...</div>
+                        </div>
+                        <div class="col-md-6 ps-md-3">
+                            <div class="small fw-bold text-muted mb-1"><i class="bi bi-wallet2"></i> Método de Pago:</div>
+                            <div class="small" id="det-pago">Efectivo contra entrega</div>
+                            <div class="small fw-bold text-success mt-2" style="font-size: 1.1rem;">Total Pagado: <span id="det-total">$0.00</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Historial Logístico -->
+                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-journal-text"></i> Bitácora de Envío</h5>
+                    <div class="list-group list-group-flush border rounded overflow-hidden" id="det-bitacora" style="max-height: 150px; overflow-y: auto;">
+                        <!-- Dinámico -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos del Stepper de Estado */
+    .stepper-wrapper {
+        position: relative;
+    }
+    .stepper-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 40px;
+        right: 40px;
+        height: 4px;
+        background-color: #e9ecef;
+        z-index: 1;
+    }
+    .stepper-item {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+    .step-counter {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+        border: 3px solid #fff;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    /* Estados activos y completados */
+    .stepper-item.completed .step-counter {
+        background-color: #2e7d32;
+        color: white;
+    }
+    .stepper-item.active .step-counter {
+        background-color: #d84315;
+        color: white;
+        transform: scale(1.15);
+        box-shadow: 0 0 0 4px rgba(216, 67, 21, 0.2);
+    }
+    .stepper-item.completed .step-name {
+        color: #2e7d32;
+        font-weight: 600;
+    }
+    .stepper-item.active .step-name {
+        color: #d84315;
+        font-weight: 700;
+    }
+    .stepper-item.cancelled .step-counter {
+        background-color: #c62828;
+        color: white;
+    }
+    .stepper-item.cancelled .step-name {
+        color: #c62828;
+        font-weight: 700;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        let pedidosLocales = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarPedidosCliente();
+        });
+
+        // Obtener historial de pedidos mediante AJAX (Fetch)
+        function cargarPedidosCliente() {
+            const usuarioId = window.UsuarioId;
+            const lista = document.getElementById("lista-pedidos-cliente");
+
+            if (!usuarioId) {
+                lista.innerHTML = `
+                    <div class="alert alert-danger border-0 text-center">
+                        <i class="bi bi-shield-exclamation fs-3"></i>
+                        <p class="mt-2 small">Debes estar registrado para consultar el panel.</p>
+                    </div>`;
+                return;
+            }
+
+            fetch(`/api/ClientePedidosApi?usuarioId=${usuarioId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("No autorizado");
+                    return res.json();
+                })
+                .then(data => {
+                    pedidosLocales = data;
+                    renderizarListaPedidos(data);
+                })
+                .catch(err => {
+                    console.error("Error al cargar pedidos:", err);
+                    lista.innerHTML = `
+                        <div class="text-center py-4 text-danger small">
+                            <i class="bi bi-exclamation-triangle fs-3"></i>
+                            <p class="mt-1">Error al conectar con la base de datos.</p>
+                        </div>`;
+                });
+        }
+
+        // Renderizar la lista lateral de pedidos
+        function renderizarListaPedidos(pedidos) {
+            const lista = document.getElementById("lista-pedidos-cliente");
+            if (pedidos.length === 0) {
+                lista.innerHTML = `
+                    <div class="text-center py-5 text-muted small">
+                        <i class="bi bi-bag-x fs-1 opacity-50"></i>
+                        <p class="mt-2">Aún no has realizado ninguna compra con esta cuenta.</p>
+                        <a href="/" class="btn btn-sm btn-outline-success mt-2">Explorar Catálogo</a>
+                    </div>`;
+                return;
+            }
+
+            let html = "";
+            pedidos.forEach(p => {
+                let badgeColor = "bg-warning text-dark";
+                if (p.estado === "Preparando") badgeColor = "bg-info text-white";
+                else if (p.estado === "En Camino" || p.estado === "Enviado") badgeColor = "bg-primary text-white";
+                else if (p.estado === "Entregado") badgeColor = "bg-success text-white";
+                else if (p.estado === "Cancelado") badgeColor = "bg-danger text-white";
+
+                const fecha = new Date(p.fechaPedido).toLocaleDateString('es-MX', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                html += `
+                    <div class="card p-3 border shadow-sm item-pedido-click" onclick="seleccionarPedido(${p.id})" style="border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-extrabold text-success">Pedido #${p.id}</span>
+                            <span class="badge ${badgeColor}">${p.estado}</span>
+                        </div>
+                        <div class="text-muted small mb-1"><i class="bi bi-calendar3"></i> ${fecha}</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">${p.detalles.length} productos</span>
+                            <span class="fw-bold text-dark fs-5">$${p.total.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            lista.innerHTML = html;
+        }
+
+        // Mostrar detalle de pedido específico
+        window.seleccionarPedido = function(id) {
+            const pedido = pedidosLocales.find(p => p.id === id);
+            if (!pedido) return;
+
+            // Iluminar la tarjeta lateral seleccionada (opcional estética)
+            document.querySelectorAll(".item-pedido-click").forEach(el => {
+                el.classList.remove("border-success", "bg-success", "bg-opacity-10");
+            });
+            event.currentTarget.classList.add("border-success", "bg-success", "bg-opacity-10");
+
+            // Ocultar mensaje vacío y mostrar contenido
+            document.getElementById("detalle-vacio-mensaje").classList.add("d-none");
+            document.getElementById("detalle-pedido-contenido").classList.remove("d-none");
+
+            // Cargar datos estáticos del pedido
+            document.getElementById("det-pedido-id").textContent = `#${pedido.id}`;
+            document.getElementById("det-pedido-fecha").textContent = new Date(pedido.fechaPedido).toLocaleString('es-MX');
+            document.getElementById("det-direccion").textContent = pedido.direccionEnvio;
+            document.getElementById("det-pago").textContent = `Pago en ${pedido.metodoPago} contra entrega`;
+            document.getElementById("det-total").textContent = `$${pedido.total.toFixed(2)}`;
+
+            const estBadge = document.getElementById("det-pedido-estado");
+            estBadge.textContent = pedido.estado;
+            estBadge.className = "badge fs-6 px-3 py-2 ";
+            if (pedido.estado === "Pendiente") estBadge.classList.add("bg-warning", "text-dark");
+            else if (pedido.estado === "Preparando") estBadge.classList.add("bg-info", "text-white");
+            else if (pedido.estado === "En Camino" || pedido.estado === "Enviado") estBadge.classList.add("bg-primary", "text-white");
+            else if (pedido.estado === "Entregado") estBadge.classList.add("bg-success", "text-white");
+            else estBadge.classList.add("bg-danger", "text-white");
+
+            // Cargar Artículos en la tabla
+            const tbody = document.getElementById("det-articulos-body");
+            let artHtml = "";
+            pedido.detalles.forEach(art => {
+                artHtml += `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="${art.imagenUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=50&q=80'}" alt="${art.nombreProducto}" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">
+                                <span class="fw-semibold text-dark">${art.nombreProducto}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">${art.cantidad}</td>
+                        <td class="text-end">$${art.precioUnitario.toFixed(2)}</td>
+                        <td class="text-end fw-bold text-muted">$${art.subtotal.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = artHtml;
+
+            // Configurar el Stepper de Estados
+            configurarStepper(pedido.estado);
+
+            // Cargar Bitácora de envío
+            const bitacora = document.getElementById("det-bitacora");
+            let bitHtml = "";
+            if (pedido.historialEstados.length === 0) {
+                bitHtml = `<div class="list-group-item text-center text-muted small py-3">No hay historial registrado.</div>`;
+            } else {
+                pedido.historialEstados.forEach(h => {
+                    const hFecha = new Date(h.fechaCambio).toLocaleTimeString('es-MX', {
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                    bitHtml += `
+                        <div class="list-group-item bg-transparent py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="small text-dark">${h.estadoNuevo}</strong>
+                                <span class="text-muted" style="font-size: 0.75rem;">${hFecha}</span>
+                            </div>
+                            <p class="m-0 text-muted" style="font-size: 0.75rem;">${h.notas || 'Sin notas.'}</p>
+                        </div>
+                    `;
+                });
+            }
+            bitacora.innerHTML = bitHtml;
+        };
+
+        // Función para colorear el Stepper
+        function configurarStepper(estadoActual) {
+            const steps = ["Pendiente", "Preparando", "En Camino", "Entregado"];
+            
+            // Limpiar clases
+            document.querySelectorAll(".stepper-item").forEach(el => {
+                el.className = "stepper-item";
+            });
+
+            if (estadoActual === "Cancelado") {
+                const stepPendiente = document.getElementById("step-pendiente");
+                stepPendiente.classList.add("cancelled");
+                stepPendiente.querySelector(".step-name").textContent = "Cancelado";
+                return;
+            }
+
+            // Restaurar texto de pendiente por si fue cancelado antes
+            document.getElementById("step-pendiente").querySelector(".step-name").textContent = "Pendiente";
+
+            const idxActual = steps.indexOf(estadoActual);
+            
+            steps.forEach((step, idx) => {
+                const el = document.getElementById(`step-${step.toLowerCase().replace(" ", "-")}`);
+                if (!el) return;
+
+                if (idx < idxActual) {
+                    el.classList.add("completed");
+                } else if (idx === idxActual) {
+                    el.classList.add("active");
+                }
+            });
+        }
+    </script>
+}
