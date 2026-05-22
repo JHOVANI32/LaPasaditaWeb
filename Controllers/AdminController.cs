@@ -76,6 +76,23 @@ namespace LaPasaditaWeb.Controllers
             decimal metaVentasDia = 1000m;
             bool metaAlcanzada = ventasDia >= metaVentasDia;
 
+            // Datos para Gráfica de Ventas (Últimos 7 días)
+            var hace7Dias = hoy.AddDays(-6);
+            var ventasUltimos7Dias = await _context.Pedidos
+                .Where(p => p.Estado != "Cancelado" && p.FechaPedido.Date >= hace7Dias)
+                .GroupBy(p => p.FechaPedido.Date)
+                .Select(g => new { Fecha = g.Key, Total = g.Sum(x => x.Total) })
+                .ToListAsync();
+
+            var labelsDias = new string[7];
+            var totalesVentas = new decimal[7];
+            for(int i = 0; i < 7; i++) {
+                var dia = hace7Dias.AddDays(i);
+                labelsDias[i] = dia.ToString("dd MMM");
+                var ventaDia = ventasUltimos7Dias.FirstOrDefault(v => v.Fecha.Date == dia.Date);
+                totalesVentas[i] = ventaDia != null ? (decimal)ventaDia.Total : 0m;
+            }
+
             ViewBag.PedidosHoy = pedidosHoy;
             ViewBag.VentasDia = ventasDia;
             ViewBag.CatalogoActivo = catalogoActivo;
@@ -87,6 +104,8 @@ namespace LaPasaditaWeb.Controllers
             ViewBag.ClientesNuevosHoy = clientesNuevosHoy;
             ViewBag.MetaVentasDia = metaVentasDia;
             ViewBag.MetaAlcanzada = metaAlcanzada;
+            ViewBag.ChartLabels = System.Text.Json.JsonSerializer.Serialize(labelsDias);
+            ViewBag.ChartData = System.Text.Json.JsonSerializer.Serialize(totalesVentas);
 
             return View();
         }
