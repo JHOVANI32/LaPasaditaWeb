@@ -225,8 +225,10 @@ namespace LaPasaditaWeb.Controllers.Api
 
         // GET: api/AdminProductosApi/plantilla-excel
         [HttpGet("plantilla-excel")]
-        public IActionResult DescargarPlantilla()
+        public async Task<IActionResult> DescargarPlantilla()
         {
+            var productos = await _context.Productos.Include(p => p.Categoria).OrderBy(p => p.Id).ToListAsync();
+
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add("Productos");
@@ -245,14 +247,17 @@ namespace LaPasaditaWeb.Controllers.Api
                 headerRange.Style.Font.Bold = true;
                 headerRange.Style.Fill.BackgroundColor = XLColor.LightGreen;
 
-                // Ejemplo
-                currentRow++;
-                worksheet.Cell(currentRow, 1).Value = "Ejemplo Producto";
-                worksheet.Cell(currentRow, 2).Value = "Descripción de prueba";
-                worksheet.Cell(currentRow, 3).Value = 25.50;
-                worksheet.Cell(currentRow, 4).Value = 100;
-                worksheet.Cell(currentRow, 5).Value = "Abarrotes";
-                worksheet.Cell(currentRow, 6).Value = "/images/productos/default-grocery.png";
+                // Cargar datos reales
+                foreach (var prod in productos)
+                {
+                    currentRow++;
+                    worksheet.Cell(currentRow, 1).Value = prod.Nombre;
+                    worksheet.Cell(currentRow, 2).Value = prod.Descripcion;
+                    worksheet.Cell(currentRow, 3).Value = prod.Precio;
+                    worksheet.Cell(currentRow, 4).Value = prod.Stock;
+                    worksheet.Cell(currentRow, 5).Value = prod.Categoria != null ? prod.Categoria.Nombre : "";
+                    worksheet.Cell(currentRow, 6).Value = prod.ImagenUrl;
+                }
 
                 worksheet.Columns().AdjustToContents();
 
@@ -260,7 +265,7 @@ namespace LaPasaditaWeb.Controllers.Api
                 {
                     workbook.SaveAs(stream);
                     var content = stream.ToArray();
-                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Plantilla_Productos.xlsx");
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Inventario_Productos.xlsx");
                 }
             }
         }
