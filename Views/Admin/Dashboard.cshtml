@@ -9,7 +9,76 @@
             <h1 class="fw-bold gradient-text m-0"><i class="bi bi-speedometer2"></i> Dashboard de Administración</h1>
             <p class="text-muted m-0">Administra el inventario, los precios y monitorea las ventas de La Pasadita.</p>
         </div>
-        <span class="badge bg-danger px-3 py-2 fs-6" style="border-radius: var(--radius-sm);">Panel de Control</span>
+        <div class="d-flex align-items-center gap-3">
+            @{
+                var countNuevosClientes = ViewBag.ClientesNuevosHoy != null ? ((IEnumerable<LaPasaditaWeb.Models.Usuario>)ViewBag.ClientesNuevosHoy).Count() : 0;
+                var countPedidosPendientes = ViewBag.PedidosPendientes != null ? ((IEnumerable<LaPasaditaWeb.Models.Pedido>)ViewBag.PedidosPendientes).Count() : 0;
+                var metaAlcanzada = ViewBag.MetaAlcanzada != null && (bool)ViewBag.MetaAlcanzada;
+                var totalNotificaciones = (countNuevosClientes > 0 ? 1 : 0) + (countPedidosPendientes > 0 ? 1 : 0) + (metaAlcanzada ? 1 : 0);
+            }
+            
+            <div class="dropdown">
+                <button class="btn btn-light position-relative border-0 shadow-sm" type="button" id="notificacionesDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 50%; width: 45px; height: 45px;">
+                    <i class="bi bi-bell-fill fs-5 text-secondary"></i>
+                    @if (totalNotificaciones > 0)
+                    {
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            @totalNotificaciones
+                            <span class="visually-hidden">notificaciones no leídas</span>
+                        </span>
+                    }
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" aria-labelledby="notificacionesDropdown" style="width: 350px; border-radius: var(--radius-md); padding: 0;">
+                    <li class="px-3 py-2 bg-light border-bottom" style="border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+                        <h6 class="m-0 fw-bold"><i class="bi bi-bell"></i> Notificaciones Recientes</h6>
+                    </li>
+                    <li>
+                        <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                            
+                            @if (totalNotificaciones == 0)
+                            {
+                                <div class="p-4 text-center text-muted">
+                                    <i class="bi bi-bell-slash fs-2 mb-2 d-block"></i>
+                                    <span class="small">No tienes notificaciones nuevas.</span>
+                                </div>
+                            }
+                            
+                            @if (countNuevosClientes > 0)
+                            {
+                                <div class="list-group-item list-group-item-action py-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1 text-success fw-bold"><i class="bi bi-people-fill me-2"></i> Nuevos Clientes</h6>
+                                    </div>
+                                    <p class="mb-1 small">¡Tenemos @countNuevosClientes nuevos clientes registrados hoy!</p>
+                                </div>
+                            }
+
+                            @if (metaAlcanzada)
+                            {
+                                <div class="list-group-item list-group-item-action py-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1 fw-bold" style="color: #27ae60;"><i class="bi bi-trophy-fill me-2"></i> Meta de Ventas</h6>
+                                    </div>
+                                    <p class="mb-1 small">Felicidades, has superado la meta de ventas de @(((decimal)ViewBag.MetaVentasDia).ToString("C")) para el día de hoy.</p>
+                                </div>
+                            }
+
+                            @if (countPedidosPendientes > 0)
+                            {
+                                <div class="list-group-item list-group-item-action py-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1 text-info fw-bold"><i class="bi bi-receipt me-2"></i> Pedidos Pendientes</h6>
+                                    </div>
+                                    <p class="mb-1 small">Tienes @countPedidosPendientes pedidos por atender.</p>
+                                </div>
+                            }
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <span class="badge bg-danger px-3 py-2 fs-6" style="border-radius: var(--radius-sm);">Panel de Control</span>
+        </div>
     </div>
 
     <!-- Menú de Navegación del Panel (Pestañas Bootstrap) -->
@@ -49,58 +118,6 @@
             
             <div class="row mb-4">
                 <div class="col-12">
-                    
-                    <!-- ALERTA DE NUEVOS CLIENTES -->
-                    @if (ViewBag.ClientesNuevosHoy != null)
-                    {
-                        var clientesNuevos = (IEnumerable<LaPasaditaWeb.Models.Usuario>)ViewBag.ClientesNuevosHoy;
-                        if (clientesNuevos.Any())
-                        {
-                            <div class="alert alert-success border-success shadow-sm mb-3 d-flex gap-3 align-items-center fade-in-up" role="alert" style="border-radius: var(--radius-md);">
-                                <i class="bi bi-people-fill fs-3 text-success"></i>
-                                <div class="w-100">
-                                    <h5 class="fw-bold mb-1 m-0">¡Tenemos @clientesNuevos.Count() nuevos clientes hoy!</h5>
-                                    <p class="m-0 small text-success-emphasis">Sigue así. Revisa sus perfiles en la base de datos o envíales un saludo.</p>
-                                </div>
-                            </div>
-                        }
-                    }
-
-                    <!-- ALERTA DE META DE VENTAS -->
-                    @if (ViewBag.MetaAlcanzada != null && (bool)ViewBag.MetaAlcanzada == true)
-                    {
-                        <div class="alert border-0 shadow-sm mb-3 d-flex gap-3 align-items-center fade-in-up" role="alert" style="border-radius: var(--radius-md); background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); color: white;">
-                            <i class="bi bi-trophy-fill fs-2"></i>
-                            <div class="w-100">
-                                <h5 class="fw-bold mb-1 m-0">¡Felicidades! Meta Diaria Alcanzada</h5>
-                                <p class="m-0 small text-white-50">Has superado la meta de ventas de @(((decimal)ViewBag.MetaVentasDia).ToString("C")) para el día de hoy.</p>
-                            </div>
-                        </div>
-                    }
-
-                    <!-- ALERTA DE PEDIDOS PENDIENTES -->
-                    @if (ViewBag.PedidosPendientes != null)
-                    {
-                        var pedPendientes = (IEnumerable<LaPasaditaWeb.Models.Pedido>)ViewBag.PedidosPendientes;
-                        if (pedPendientes.Any())
-                        {
-                            <div class="alert alert-info border-info shadow-sm mb-3 d-flex gap-3 align-items-start fade-in-up" role="alert" style="border-radius: var(--radius-md); background-color: #cff4fc;">
-                                <i class="bi bi-bell-fill fs-3 text-info-emphasis"></i>
-                                <div class="w-100">
-                                    <h5 class="fw-bold mb-1 text-info-emphasis">Tienes @pedPendientes.Count() pedidos por atender</h5>
-                                    <p class="mb-2 small text-info-emphasis">Ve a la pestaña de "Pedidos Recibidos" para prepararlos y enviarlos.</p>
-                                    <ul class="list-group list-group-flush border-0 small mt-2">
-                                        @foreach (var ped in pedPendientes.Take(3))
-                                        {
-                                            <li class="list-group-item bg-transparent px-0 py-1 border-0 text-info-emphasis">
-                                                <strong>Pedido #@ped.Id</strong> - @ped.Estado <span class="text-muted" style="font-size: 0.75rem;">(Hace @Math.Round((DateTime.UtcNow - ped.FechaPedido).TotalMinutes) min)</span>
-                                            </li>
-                                        }
-                                    </ul>
-                                </div>
-                            </div>
-                        }
-                    }
 
                     <!-- ALERTA DE PRODUCTOS AGOTADOS -->
                     @if (ViewBag.ProductosAgotados != null)
