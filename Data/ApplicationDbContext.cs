@@ -28,6 +28,7 @@ namespace LaPasaditaWeb.Data
         public DbSet<Promocion> Promociones { get; set; } = null!;
         public DbSet<CalificacionProducto> CalificacionesProductos { get; set; } = null!;
         public DbSet<ConfiguracionTienda> ConfiguracionTienda { get; set; } = null!;
+        public DbSet<CampanaCupon> CampanasCupones { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -136,6 +137,20 @@ namespace LaPasaditaWeb.Data
                 .WithMany()
                 .HasForeignKey(c => c.ProductoId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Pedido -> CampanaCupon (SetNull)
+            modelBuilder.Entity<Pedido>()
+                .HasOne(p => p.CampanaCupon)
+                .WithMany(c => c.PedidosPremiados)
+                .HasForeignKey(p => p.CampanaCuponId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Pedido -> CuponGenerado (SetNull)
+            modelBuilder.Entity<Pedido>()
+                .HasOne(p => p.CuponGenerado)
+                .WithMany()
+                .HasForeignKey(p => p.CuponGeneradoId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // ═══════════════════════════════════════════════════════════
             // ÍNDICES ÚNICOS

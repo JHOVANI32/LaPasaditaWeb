@@ -64,7 +64,7 @@ namespace LaPasaditaWeb.Controllers
             var authProperties = new AuthenticationProperties
             {
                 IsPersistent = true, // Mantener la sesión iniciada
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
             };
 
             // Iniciar sesión (crea la cookie encriptada en el navegador)
@@ -140,7 +140,13 @@ namespace LaPasaditaWeb.Controllers
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+            
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
+            };
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
 
             // Fusión silenciosa del carrito
             if (!string.IsNullOrEmpty(guestToken))

@@ -2,9 +2,53 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Si estamos en la página del dashboard, cargamos el inventario inicialmente
     if (document.getElementById("tabla-productos-body")) {
-        cargarInventario();
-        
-        // Cargar pedidos también al cambiar de pestaña
+        if (typeof cargarInventario === 'function') {
+            cargarInventario();
+        }
+    }
+
+    // Manejar apertura de pestañas por hash en la URL
+    const activarPestanaPorHash = () => {
+        try {
+            if (window.location.hash) {
+                const targetTab = document.querySelector(`[data-bs-target="${window.location.hash}"]`);
+                if (targetTab) {
+                    // Quitar clase active de todas las pestañas y paneles
+                    document.querySelectorAll(".nav-link[data-bs-toggle='tab']").forEach(t => {
+                        t.classList.remove("active");
+                        t.setAttribute("aria-selected", "false");
+                    });
+                    document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("show", "active"));
+
+                    // Añadir clase active a la pestaña objetivo
+                    targetTab.classList.add("active");
+                    targetTab.setAttribute("aria-selected", "true");
+                    const targetPane = document.querySelector(window.location.hash);
+                    if (targetPane) {
+                        targetPane.classList.add("show", "active");
+                    }
+
+                    // Cargar los datos correspondientes manualmente
+                    if (window.location.hash === '#promociones-pane' && typeof cargarPromociones === 'function') {
+                        cargarPromociones();
+                    } else if (window.location.hash === '#categorias-pane' && typeof cargarCategorias === 'function') {
+                        cargarCategorias();
+                    } else if (window.location.hash === '#pedidos-pane' && typeof cargarPedidosAdmin === 'function') {
+                        cargarPedidosAdmin();
+                    } else if (window.location.hash === '#configuracion-pane' && typeof cargarConfiguracion === 'function') {
+                        cargarConfiguracion();
+                    }
+                }
+            }
+        } catch(e) {
+            console.error("Error al activar pestaña por hash:", e);
+        }
+    };
+    
+    activarPestanaPorHash();
+    window.addEventListener("hashchange", activarPestanaPorHash);
+
+    // Cargar pedidos también al cambiar de pestaña
         const pedidosTab = document.getElementById("pedidos-tab");
         if (pedidosTab) {
             pedidosTab.addEventListener("click", cargarPedidosAdmin);
@@ -22,9 +66,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Cargar promociones al cambiar de pestaña
-        const promocionesTab = document.getElementById("promociones-tab");
+        const promocionesTab = document.getElementById("ofertas-tab"); // NOTA: El id es ofertas-tab
         if (promocionesTab) {
             promocionesTab.addEventListener("click", cargarPromociones);
+        }
+
+        // Cargar campañas al cambiar de pestaña
+        const campanasTab = document.getElementById("campanas-tab");
+        if (campanasTab) {
+            campanasTab.addEventListener("click", cargarCampanas);
         }
         
         // Agregar listener para guardar producto
@@ -51,6 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
             formPromocion.addEventListener("submit", guardarPromocion);
         }
 
+        // Agregar listener para guardar campaña
+        const formCampana = document.getElementById("form-campana");
+        if (formCampana) {
+            formCampana.addEventListener("submit", guardarCampana);
+        }
+
         // Agregar listener para cambiar estado de pedido
         const formPedido = document.getElementById("pedidoEstadoForm");
         if (formPedido) {
@@ -73,7 +129,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }
-    }
 });
 
 // ==========================================
@@ -211,6 +266,189 @@ window.abrirModalCrear = function() {
             }
         });
         imgFileEl.dataset.listenerAttached = "true";
+    }
+};
+
+// ═══════════════════════════════════════════════════════════
+// GESTIÓN DE CAMPAÑAS DE CUPONES
+// ═══════════════════════════════════════════════════════════
+
+window.cargarCampanas = function() {
+    const tbody = document.getElementById("tabla-campanas-body");
+    if (!tbody) return;
+
+    fetch("/api/AdminCampanasApi")
+        .then(res => res.json())
+        .then(data => {
+            tbody.innerHTML = "";
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">No hay campañas registradas.</td></tr>`;
+                return;
+            }
+
+            data.forEach(campana => {
+                const tr = document.createElement("tr");
+                const badgeActivo = campana.activo 
+                    ? `<span class="badge bg-success">Activa</span>` 
+                    : `<span class="badge bg-secondary">Inactiva</span>`;
+                
+                let recompensaTxt = campana.tipoRecompensa === "Fijo"
+                    ? `${campana.valorRecompensaFija}%`
+                    : `Sorpresa (${campana.valoresSorpresa})`;
+
+                tr.innerHTML = `
+                    <td class="fw-bold">#${campana.id}</td>
+                    <td>${campana.titulo}</td>
+                    <td>$${campana.montoMinimo.toFixed(2)}</td>
+                    <td>${recompensaTxt}</td>
+                    <td>${campana.limiteEarlyBird > 0 ? campana.limiteEarlyBird : 'Sin Límite'}</td>
+                    <td>${campana.limiteDiario > 0 ? campana.limiteDiario : 'Sin Límite'}</td>
+                    <td>${campana.cuponesGeneradosHoy}</td>
+                    <td>${badgeActivo}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm ${campana.activo ? 'btn-outline-secondary' : 'btn-outline-success'}" onclick="toggleCampanaActivo(${campana.id})" title="${campana.activo ? 'Desactivar' : 'Activar'}">
+                            <i class="bi ${campana.activo ? 'bi-pause-circle' : 'bi-play-circle'}"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary ms-1" onclick="editarCampana(${campana.id})" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger ms-1" onclick="eliminarCampana(${campana.id})" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            console.error("Error al cargar campañas:", err);
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-danger">Error al cargar datos.</td></tr>`;
+        });
+};
+
+window.abrirModalCampana = function() {
+    document.getElementById("form-campana").reset();
+    document.getElementById("campanaId").value = "";
+    document.getElementById("campanaActivo").checked = true;
+    window.toggleRecompensaCampos();
+    new bootstrap.Modal(document.getElementById("modalCampana")).show();
+};
+
+window.editarCampana = function(id) {
+    fetch(`/api/AdminCampanasApi`)
+        .then(res => res.json())
+        .then(data => {
+            const campana = data.find(c => c.id === id);
+            if (!campana) return;
+
+            document.getElementById("campanaId").value = campana.id;
+            document.getElementById("campanaTitulo").value = campana.titulo;
+            document.getElementById("campanaActivo").checked = campana.activo;
+            document.getElementById("campanaMonto").value = campana.montoMinimo;
+            document.getElementById("campanaLimiteDiario").value = campana.limiteDiario;
+            document.getElementById("campanaEarlyBird").value = campana.limiteEarlyBird;
+            document.getElementById("campanaTipoRecompensa").value = campana.tipoRecompensa;
+            
+            if (campana.tipoRecompensa === "Fijo") {
+                document.getElementById("campanaValorFijo").value = campana.valorRecompensaFija;
+            } else {
+                document.getElementById("campanaValoresSorpresa").value = campana.valoresSorpresa;
+            }
+            
+            document.getElementById("campanaMensajeBanner").value = campana.mensajeBanner || "";
+            
+            window.toggleRecompensaCampos();
+            new bootstrap.Modal(document.getElementById("modalCampana")).show();
+        })
+        .catch(err => console.error("Error:", err));
+};
+
+window.toggleRecompensaCampos = function() {
+    const tipo = document.getElementById("campanaTipoRecompensa").value;
+    if (tipo === "Fijo") {
+        document.getElementById("campoFijo").classList.remove("d-none");
+        document.getElementById("campoSorpresa").classList.add("d-none");
+    } else {
+        document.getElementById("campoFijo").classList.add("d-none");
+        document.getElementById("campoSorpresa").classList.remove("d-none");
+    }
+};
+
+window.guardarCampana = function(e) {
+    e.preventDefault();
+    const id = document.getElementById("campanaId").value;
+    const tipo = document.getElementById("campanaTipoRecompensa").value;
+    
+    const campana = {
+        titulo: document.getElementById("campanaTitulo").value,
+        activo: document.getElementById("campanaActivo").checked,
+        montoMinimo: parseFloat(document.getElementById("campanaMonto").value),
+        tipoRecompensa: tipo,
+        limiteDiario: parseInt(document.getElementById("campanaLimiteDiario").value),
+        limiteEarlyBird: parseInt(document.getElementById("campanaEarlyBird").value),
+        mensajeBanner: document.getElementById("campanaMensajeBanner").value
+    };
+
+    if (tipo === "Fijo") {
+        campana.valorRecompensaFija = parseFloat(document.getElementById("campanaValorFijo").value);
+    } else {
+        campana.valoresSorpresa = document.getElementById("campanaValoresSorpresa").value;
+    }
+
+    if (id) {
+        campana.id = parseInt(id);
+        fetch(`/api/AdminCampanasApi/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(campana)
+        })
+        .then(res => {
+            if (res.ok) {
+                mostrarNotificacionAdmin("Campaña actualizada", "success");
+                bootstrap.Modal.getInstance(document.getElementById("modalCampana")).hide();
+                cargarCampanas();
+            } else {
+                mostrarNotificacionAdmin("Error al actualizar", "danger");
+            }
+        });
+    } else {
+        fetch("/api/AdminCampanasApi", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(campana)
+        })
+        .then(res => {
+            if (res.ok) {
+                mostrarNotificacionAdmin("Campaña creada", "success");
+                bootstrap.Modal.getInstance(document.getElementById("modalCampana")).hide();
+                cargarCampanas();
+            } else {
+                mostrarNotificacionAdmin("Error al crear", "danger");
+            }
+        });
+    }
+};
+
+window.toggleCampanaActivo = function(id) {
+    fetch(`/api/AdminCampanasApi/toggle/${id}`, { method: "PUT" })
+        .then(res => res.json())
+        .then(data => {
+            mostrarNotificacionAdmin(data.message, "success");
+            cargarCampanas();
+        });
+};
+
+window.eliminarCampana = function(id) {
+    if (confirm("¿Estás seguro de eliminar esta campaña? Esta acción no se puede deshacer.")) {
+        fetch(`/api/AdminCampanasApi/${id}`, { method: "DELETE" })
+            .then(res => {
+                if (res.ok) {
+                    mostrarNotificacionAdmin("Campaña eliminada", "success");
+                    cargarCampanas();
+                } else {
+                    mostrarNotificacionAdmin("Error al eliminar", "danger");
+                }
+            });
     }
 };
 
@@ -899,8 +1137,6 @@ window.abrirModalCargaMasiva = function() {
     modal.show();
 };
 
-};
-
 window.subirArchivoExcel = function() {
     const fileInput = document.getElementById("archivoExcel");
     if (!fileInput || fileInput.files.length === 0) {
@@ -1084,3 +1320,4 @@ window.eliminarPromocion = function(id) {
             .catch(err => console.error(err));
     }
 };
+

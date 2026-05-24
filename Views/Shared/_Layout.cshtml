@@ -103,9 +103,18 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link nav-link-custom" href="/#catalogo-seccion">
-                                <i class="bi bi-tags"></i> Ofertas
-                            </a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a class="nav-link nav-link-custom" href="/Admin/Dashboard#promociones-pane">
+                                    <i class="bi bi-tags"></i> Ofertas
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="nav-link nav-link-custom" href="/#ofertas">
+                                    <i class="bi bi-tags"></i> Ofertas
+                                </a>
+                            }
                         </li>
                     </ul>
                     

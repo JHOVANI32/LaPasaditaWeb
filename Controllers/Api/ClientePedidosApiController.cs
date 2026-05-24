@@ -43,6 +43,12 @@ namespace LaPasaditaWeb.Controllers.Api
                     p.CostoEnvio,
                     p.DireccionEnvio,
                     p.NombreCliente,
+                    CuponGenerado = (p.CuponGenerado != null && p.Estado == "Entregado") ? new {
+                        p.CuponGenerado.Codigo,
+                        p.CuponGenerado.Valor,
+                        p.CuponGenerado.TipoDescuento,
+                        p.CuponGenerado.FechaExpiracion
+                    } : null,
                     Detalles = p.Detalles.Select(d => new
                     {
                         d.Id,

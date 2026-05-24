@@ -109,6 +109,11 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success border-0 px-4 py-3" id="campanas-tab" data-bs-toggle="tab" data-bs-target="#campanas-pane" type="button" role="tab" aria-controls="campanas-pane" aria-selected="false">
+                <i class="bi bi-gift"></i> Campañas de Cupones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link fw-bold text-success border-0 px-4 py-3" id="configuracion-tab" data-bs-toggle="tab" data-bs-target="#configuracion-pane" type="button" role="tab" aria-controls="configuracion-pane" aria-selected="false">
                 <i class="bi bi-gear"></i> Configuración Tienda
             </button>
@@ -415,7 +420,38 @@
             </div>
         </div>
 
-        <!-- PESTAÑA 5: CONFIGURACIÓN DE LA TIENDA -->
+        <!-- PESTAÑA 5: CAMPAÑAS DE CUPONES -->
+        <div class="tab-pane fade" id="campanas-pane" role="tabpanel" aria-labelledby="campanas-tab" tabindex="0">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold m-0 text-dark"><i class="bi bi-gift-fill"></i> Gestión de Campañas Dinámicas</h4>
+                <button class="btn btn-success fw-bold px-4" onclick="abrirModalCampana()" style="border-radius: var(--radius-sm);">
+                    <i class="bi bi-plus-circle"></i> Nueva Campaña
+                </button>
+            </div>
+            
+            <div class="table-responsive bg-white p-3 rounded shadow-sm">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Campaña</th>
+                            <th>Monto Mín.</th>
+                            <th>Recompensa</th>
+                            <th>Early Bird</th>
+                            <th>Límite Diario</th>
+                            <th>Generados Hoy</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-campanas-body">
+                        <tr><td colspan="9" class="text-center py-4 text-muted">Cargando campañas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 6: CONFIGURACIÓN DE LA TIENDA -->
         <div class="tab-pane fade" id="configuracion-pane" role="tabpanel" aria-labelledby="configuracion-tab" tabindex="0">
             <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
                 <div class="row align-items-center mb-4">
@@ -650,6 +686,82 @@
                 <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);">
                     <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: var(--radius-sm);">Cancelar</button>
                     <button type="submit" class="btn btn-warning px-4 py-2 fw-bold text-dark" style="border-radius: var(--radius-sm);">Guardar Oferta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA CREAR/EDITAR CAMPAÑA -->
+<div class="modal fade" id="modalCampana" tabindex="-1" aria-labelledby="modalCampanaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-md);">
+            <div class="modal-header bg-danger text-white py-3" style="border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+                <h5 class="modal-title fw-bold" id="modalCampanaTitulo">Nueva Campaña Dinámica</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="form-campana">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="campanaId">
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold">Título de la Campaña *</label>
+                            <input type="text" id="campanaTitulo" class="form-control" required placeholder="Ej. Madrugadores, Cierra Mes..." style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <div class="form-check form-switch fs-5">
+                                <input class="form-check-input" type="checkbox" role="switch" id="campanaActivo" checked>
+                                <label class="form-check-label ms-2" for="campanaActivo">Activa</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row bg-light p-3 rounded mb-3 border">
+                        <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-funnel"></i> Condiciones (Reglas)</h6>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small">Monto Mínimo ($) *</label>
+                            <input type="number" id="campanaMonto" class="form-control" required min="1" step="0.01" value="500" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small">Límite Diario (0 = Sin Límite)</label>
+                            <input type="number" id="campanaLimiteDiario" class="form-control" required min="0" value="0" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small">Early Bird (0 = Todos)</label>
+                            <input type="number" id="campanaEarlyBird" class="form-control" required min="0" value="0" style="border-radius: var(--radius-sm);">
+                        </div>
+                    </div>
+
+                    <div class="row bg-light p-3 rounded mb-3 border">
+                        <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-gift"></i> Recompensa</h6>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small">Tipo</label>
+                            <select id="campanaTipoRecompensa" class="form-select" onchange="toggleRecompensaCampos()">
+                                <option value="Fijo">Descuento Fijo (%)</option>
+                                <option value="Sorpresa">Sorpresa (Azar)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8 mb-3" id="campoFijo">
+                            <label class="form-label fw-bold small">Valor de Descuento (%)</label>
+                            <input type="number" id="campanaValorFijo" class="form-control" min="1" max="100" value="10">
+                        </div>
+                        <div class="col-md-8 mb-3 d-none" id="campoSorpresa">
+                            <label class="form-label fw-bold small">Posibles Descuentos separados por coma (%)</label>
+                            <input type="text" id="campanaValoresSorpresa" class="form-control" placeholder="Ej. 10,15,20,50">
+                            <div class="small text-muted mt-1">El sistema elegirá uno al azar al ganar.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Mensaje Atractivo para el Catálogo (Opcional)</label>
+                        <input type="text" id="campanaMensajeBanner" class="form-control" placeholder="Ej. ¡Llévate un cupón sorpresa en compras mayores a $500!">
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);">
+                    <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: var(--radius-sm);">Cancelar</button>
+                    <button type="submit" class="btn btn-danger px-4 py-2 fw-bold" style="border-radius: var(--radius-sm);">Guardar Campaña</button>
                 </div>
             </form>
         </div>

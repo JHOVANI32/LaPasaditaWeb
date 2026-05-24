@@ -31,7 +31,13 @@
     </div>
 </div>
 
+<!-- Banner de Campañas Activas -->
+<div id="banner-campanas-contenedor" class="mb-4 d-none fade-in-up">
+    <!-- El contenido se cargará por AJAX desde catalogo.js -->
+</div>
+
 <!-- Sección del Catálogo Principal -->
+<div id="ofertas"></div>
 <div id="catalogo-seccion" class="container py-4">
     <div class="row align-items-center mb-5 gap-3 gap-md-0">
         <!-- Buscador -->
@@ -63,7 +69,7 @@
 
 @section Scripts {
     <script>
-        window.promocionesActivas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PromocionesActivas ?? new List<LaPasaditaWeb.Models.Promocion>()));
+        window.promocionesActivas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PromocionesActivas ?? new List<LaPasaditaWeb.Models.Promocion>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
     </script>
     <script src="~/js/catalogo.js" asp-append-version="true"></script>
 }

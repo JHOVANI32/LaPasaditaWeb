@@ -3,7 +3,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inicializar elementos clave
     inicializarTokenInvitado();
     cargarCatalogo();
+    cargarCampanasPublicas();
     configurarEventosCarrito();
+
+    // Reaccionar a cambios de URL hash
+    window.addEventListener("hashchange", () => {
+        if (window.location.hash === '#ofertas') {
+            const btnOfertas = document.getElementById("btn-filtro-ofertas");
+            if (btnOfertas) window.filtrarOfertas(btnOfertas);
+        } else if (window.location.hash === '#catalogo-seccion') {
+            const btnTodos = document.querySelector(".filter-btn");
+            if (btnTodos) window.filtrarCategoria(0, btnTodos);
+        }
+    });
 });
 
 // 1. Manejo del Token del Carrito Silencioso (Invitados)
@@ -77,8 +89,13 @@ function cargarCatalogo() {
             // Renderizar filtros de categoría
             renderizarFiltros(data.categorias);
 
-            // Renderizar productos
-            renderizarProductos(data.productos);
+            // Renderizar productos o filtrar por ofertas según el hash
+            if (window.location.hash === '#ofertas') {
+                const btnOfertas = document.getElementById("btn-filtro-ofertas");
+                window.filtrarOfertas(btnOfertas);
+            } else {
+                renderizarProductos(data.productos);
+            }
         })
         .catch(err => {
             console.error("Error al cargar catálogo:", err);
@@ -98,8 +115,14 @@ function renderizarFiltros(categorias) {
     const contenedorFiltros = document.getElementById("contenedor-filtros");
     if (!contenedorFiltros) return;
 
-    let html = `<button class="filter-btn active" onclick="filtrarCategoria(0, this)">Todos</button>`;
+    let html = `<button class="filter-btn ${window.location.hash !== '#ofertas' ? 'active' : ''}" onclick="filtrarCategoria(0, this)">Todos</button>`;
     
+    // Botón de ofertas especiales
+    const tieneOfertas = window.promocionesActivas && window.promocionesActivas.length > 0;
+    if (tieneOfertas) {
+        html += `<button id="btn-filtro-ofertas" class="filter-btn text-danger fw-bold border-danger ${window.location.hash === '#ofertas' ? 'active' : ''}" onclick="filtrarOfertas(this)"><i class="bi bi-tag-fill"></i> Ofertas</button>`;
+    }
+
     categorias.forEach(cat => {
         html += `<button class="filter-btn" onclick="filtrarCategoria(${cat.id}, this)">${cat.nombre}</button>`;
     });
@@ -178,7 +201,7 @@ function renderizarProductos(productos) {
 window.filtrarCategoria = function(categoriaId, btnElement) {
     // Cambiar clase activa en los botones de filtro
     document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
-    btnElement.classList.add("active");
+    if (btnElement) btnElement.classList.add("active");
 
     if (categoriaId === 0) {
         renderizarProductos(listadoProductos);
@@ -186,6 +209,22 @@ window.filtrarCategoria = function(categoriaId, btnElement) {
         const filtrados = listadoProductos.filter(p => p.categoriaId === categoriaId);
         renderizarProductos(filtrados);
     }
+};
+
+window.filtrarOfertas = function(btnElement) {
+    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+    if (btnElement) btnElement.classList.add("active");
+
+    const promociones = window.promocionesActivas || [];
+    const filtrados = listadoProductos.filter(prod => {
+        let promoActiva = promociones.find(p => p.productoId === prod.id);
+        if (!promoActiva) {
+            promoActiva = promociones.find(p => p.productoId === null);
+        }
+        return promoActiva != null; // Show only if it has an active promotion
+    });
+    
+    renderizarProductos(filtrados);
 };
 
 // Buscador de productos en tiempo real mediante API AJAX
@@ -449,3 +488,52 @@ function mostrarNotificacion(mensaje, tipo = "success") {
         setTimeout(() => toast.remove(), 500);
     }, 4000);
 }
+
+// 6. Campañas Públicas de Cupones
+function cargarCampanasPublicas() {
+    const contenedor = document.getElementById("banner-campanas-contenedor");
+    if (!contenedor) return;
+
+    fetch("/api/CampanasApi/activas")
+        .then(res => res.json())
+        .then(campanas => {
+            if (campanas.length === 0) return;
+
+            let html = "";
+            campanas.forEach(campana => {
+                let recompensaTxt = campana.tipoRecompensa === "Fijo" 
+                    ? `un descuento de $${campana.valorRecompensaFija} MXN`
+                    : `un Descuento Sorpresa`;
+
+                html += `
+                    <div class="alert alert-warning border-warning shadow-sm mb-3 d-flex align-items-center" role="alert" style="border-radius: var(--radius-md);">
+                        <i class="bi bi-gift-fill fs-2 me-3 text-danger pulse-anim"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold m-0 text-dark">${campana.titulo}</h5>
+                            <p class="mb-0 text-dark">
+                                ${campana.mensajeBanner ? campana.mensajeBanner : `¡Compra más de <strong>$${campana.montoMinimo.toFixed(2)}</strong> y gana ${recompensaTxt} para tu próximo pedido!`}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            contenedor.innerHTML = html;
+            contenedor.classList.remove("d-none");
+        })
+        .catch(err => console.error("Error al cargar campañas públicas:", err));
+}
+
+// Animación CSS extra para el regalo
+const style = document.createElement("style");
+style.innerHTML = `
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+.pulse-anim {
+    animation: pulse 2s infinite;
+}
+`;
+document.head.appendChild(style);

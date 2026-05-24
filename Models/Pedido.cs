@@ -30,6 +30,14 @@ namespace LaPasaditaWeb.Models
         [ForeignKey(nameof(CuponId))]
         public Cupon? Cupon { get; set; }
 
+        public int? CampanaCuponId { get; set; }
+        [ForeignKey(nameof(CampanaCuponId))]
+        public CampanaCupon? CampanaCupon { get; set; }
+
+        public int? CuponGeneradoId { get; set; }
+        [ForeignKey(nameof(CuponGeneradoId))]
+        public Cupon? CuponGenerado { get; set; }
+
         [Required]
         [StringLength(50)]
         public string MetodoPago { get; set; } = string.Empty;

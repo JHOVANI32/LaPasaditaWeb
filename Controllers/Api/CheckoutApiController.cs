@@ -211,6 +211,73 @@ namespace LaPasaditaWeb.Controllers.Api
                 _context.Productos.Update(item.Producto);
             }
 
+            // 6.5 Evaluar Campañas de Cupones (Premios)
+            var campanasActivas = await _context.CampanasCupones
+                .Include(c => c.PedidosPremiados)
+                .Where(c => c.Activo && c.MontoMinimo <= total)
+                .ToListAsync();
+
+            var campanaGanadora = campanasActivas
+                .Where(c => (c.LimiteDiario == 0 || c.CuponesGeneradosHoy < c.LimiteDiario) &&
+                            (c.LimiteEarlyBird == 0 || c.PedidosPremiados.Count < c.LimiteEarlyBird))
+                .OrderByDescending(c => c.MontoMinimo)
+                .FirstOrDefault();
+
+            if (campanaGanadora != null)
+            {
+                decimal descuentoGenerado = 0;
+                string tipoDescGenerado = "Fijo";
+
+                if (campanaGanadora.TipoRecompensa == "Fijo")
+                {
+                    descuentoGenerado = campanaGanadora.ValorRecompensaFija ?? 0;
+                }
+                else // Sorpresa
+                {
+                    if (!string.IsNullOrEmpty(campanaGanadora.ValoresSorpresa))
+                    {
+                        var valores = campanaGanadora.ValoresSorpresa.Split(',')
+                            .Select(v => decimal.TryParse(v.Trim(), out var val) ? val : 0)
+                            .Where(v => v > 0)
+                            .ToList();
+                        
+                        if (valores.Any())
+                        {
+                            var rnd = new Random();
+                            descuentoGenerado = valores[rnd.Next(valores.Count)];
+                            tipoDescGenerado = "Porcentaje"; // Asumimos que los sorpresa son porcentaje
+                        }
+                    }
+                }
+
+                if (descuentoGenerado > 0)
+                {
+                    // Generar código único
+                    string codigoUnico = $"GANADOR-{DateTime.UtcNow:yyMMdd}-{Guid.NewGuid().ToString().Substring(0, 5).ToUpper()}";
+
+                    var nuevoCupon = new Cupon
+                    {
+                        Codigo = codigoUnico,
+                        TipoDescuento = tipoDescGenerado,
+                        Valor = descuentoGenerado,
+                        FechaExpiracion = DateTime.UtcNow.AddDays(30), // Válido por 30 días
+                        LimiteUso = 1,
+                        UsosActuales = 0,
+                        Activo = true
+                    };
+
+                    _context.Cupones.Add(nuevoCupon);
+                    await _context.SaveChangesAsync(); // Para obtener el ID del cupón
+
+                    nuevoPedido.CuponGeneradoId = nuevoCupon.Id;
+                    nuevoPedido.CampanaCuponId = campanaGanadora.Id;
+                    
+                    campanaGanadora.CuponesGeneradosHoy++;
+                    _context.Pedidos.Update(nuevoPedido);
+                    _context.CampanasCupones.Update(campanaGanadora);
+                }
+            }
+
             // 7. Crear el historial de estados inicial
             var historial = new HistorialEstado
             {
