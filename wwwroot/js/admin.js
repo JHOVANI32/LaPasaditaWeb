@@ -129,6 +129,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }
+
+        // Agregar listener para vista previa en vivo del Logo de la tienda
+        const logoUrlInput = document.getElementById("configLogoUrl");
+        if (logoUrlInput) {
+            logoUrlInput.addEventListener("input", (e) => {
+                const val = e.target.value.trim();
+                const imgEl = document.getElementById("logoPreviewImg");
+                const placeholder = document.getElementById("logoPreviewPlaceholder");
+                if (val) {
+                    if (imgEl) { imgEl.src = val; imgEl.style.display = "block"; }
+                    if (placeholder) placeholder.style.display = "none";
+                } else {
+                    if (imgEl) { imgEl.src = ""; imgEl.style.display = "none"; }
+                    if (placeholder) placeholder.style.display = "block";
+                }
+            });
+        }
 });
 
 // ==========================================
@@ -1081,6 +1098,23 @@ function cargarConfiguracion() {
             document.getElementById("configEmail").value = config.emailContacto || "";
             document.getElementById("configDireccion").value = config.direccionFisica || "";
             document.getElementById("configHorario").value = config.horarioAtencion || "";
+            document.getElementById("configSmtpEmail").value = config.smtpEmail || "";
+            document.getElementById("configSmtpPassword").value = config.smtpPassword || "";
+            document.getElementById("configSmtpHost").value = config.smtpHost || "";
+            document.getElementById("configSmtpPort").value = config.smtpPort || "";
+
+            // Logo
+            const logoVal = config.logoUrl || "";
+            document.getElementById("configLogoUrl").value = logoVal;
+            const imgEl = document.getElementById("logoPreviewImg");
+            const placeholder = document.getElementById("logoPreviewPlaceholder");
+            if (logoVal) {
+                if (imgEl) { imgEl.src = logoVal; imgEl.style.display = "block"; }
+                if (placeholder) placeholder.style.display = "none";
+            } else {
+                if (imgEl) { imgEl.src = ""; imgEl.style.display = "none"; }
+                if (placeholder) placeholder.style.display = "block";
+            }
         })
         .catch(err => {
             console.error("Error al cargar config:", err);
@@ -1097,7 +1131,12 @@ function guardarConfiguracion(e) {
         telefonoContacto: document.getElementById("configTelefono").value,
         emailContacto: document.getElementById("configEmail").value,
         direccionFisica: document.getElementById("configDireccion").value,
-        horarioAtencion: document.getElementById("configHorario").value
+        horarioAtencion: document.getElementById("configHorario").value,
+        smtpEmail: document.getElementById("configSmtpEmail").value,
+        smtpPassword: document.getElementById("configSmtpPassword").value,
+        smtpHost: document.getElementById("configSmtpHost").value,
+        smtpPort: parseInt(document.getElementById("configSmtpPort").value) || 587,
+        logoUrl: document.getElementById("configLogoUrl").value
     };
 
     if (!payload.nombreTienda || isNaN(payload.costoEnvioBase)) {
@@ -1321,3 +1360,123 @@ window.eliminarPromocion = function(id) {
     }
 };
 
+// ==========================================
+// 8. SECCIÓN DE REPORTES PDF
+// ==========================================
+
+window.descargarReportePdf = function(periodo) {
+    mostrarNotificacionAdmin("Generando reporte, por favor espera...", "info");
+
+    // Obtener configuración (logo) y datos de ventas en paralelo
+    Promise.all([
+        fetch("/api/AdminConfiguracionApi").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/ReportesApi/Ventas?periodo=${periodo}`).then(r => { if (!r.ok) throw new Error("Error"); return r.json(); })
+    ])
+    .then(([config, data]) => {
+        const logoUrl = config && config.logoUrl ? config.logoUrl : "";
+        const nombreTienda = config && config.nombreTienda ? config.nombreTienda : "Abarrotes La Pasadita";
+
+        // Construir un HTML temporal para el reporte
+        const container = document.createElement("div");
+        container.style.padding = "20px";
+        container.style.fontFamily = "Arial, sans-serif";
+        container.style.color = "#333";
+        container.style.backgroundColor = "#fff";
+
+        // Construir filas de la tabla
+        let filas = "";
+        if (data.ventas && data.ventas.length > 0) {
+            data.ventas.forEach(v => {
+                const fecha = new Date(v.fechaPedido).toLocaleString("es-MX");
+                const total = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(v.total);
+                filas += `
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px; text-align: center;">${v.id}</td>
+                        <td style="padding: 8px;">${fecha}</td>
+                        <td style="padding: 8px;">${v.nombreCliente}</td>
+                        <td style="padding: 8px;">${v.metodoPago}</td>
+                        <td style="padding: 8px; text-align: center;"><span style="padding: 3px 8px; border-radius: 12px; font-size: 11px; background-color: #e8f8f0; color: #27ae60; font-weight: bold;">${v.estado}</span></td>
+                        <td style="padding: 8px; font-weight: bold; text-align: right;">${total}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            filas = `<tr><td colspan="6" style="padding: 15px; text-align: center;">No hay ventas registradas en este periodo.</td></tr>`;
+        }
+
+        const totalGlobal = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(data.totalIngresos);
+        const fechaGen = new Date(data.fechaGeneracion).toLocaleString("es-MX");
+
+        // Construir cabecera del PDF: logo + nombre o solo nombre
+        let cabeceraHtml = "";
+        if (logoUrl) {
+            cabeceraHtml = `
+                <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #27ae60; padding-bottom: 15px;">
+                    <img src="${logoUrl}" alt="Logo" style="max-height: 80px; max-width: 250px; margin-bottom: 10px;" crossorigin="anonymous" />
+                    <h2 style="color: #27ae60; margin: 5px 0; font-size: 24px; letter-spacing: 1px;">${nombreTienda}</h2>
+                    <h4 style="margin-top: 0; color: #555; font-weight: 500;">${data.titulo}</h4>
+                    <p style="font-size: 11px; color: #888; margin-top: 5px;">Generado el: ${fechaGen}</p>
+                </div>
+            `;
+        } else {
+            cabeceraHtml = `
+                <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #27ae60; padding-bottom: 15px;">
+                    <h2 style="color: #27ae60; margin-bottom: 5px; font-size: 28px; letter-spacing: 1px;">${nombreTienda}</h2>
+                    <h4 style="margin-top: 0; color: #555; font-weight: 500;">${data.titulo}</h4>
+                    <p style="font-size: 11px; color: #888; margin-top: 5px;">Generado el: ${fechaGen}</p>
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            ${cabeceraHtml}
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px 20px; border-radius: 8px; border-left: 5px solid #27ae60;">
+                <div style="font-size: 14px; color: #555;"><strong>Total de Pedidos:</strong> <span style="font-size: 16px; font-weight: bold; color: #333;">${data.totalPedidos}</span></div>
+                <div style="font-size: 15px; color: #555;"><strong>Ingresos Totales:</strong> <span style="font-size: 20px; font-weight: bold; color: #27ae60;">${totalGlobal}</span></div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
+                <thead style="background-color: #27ae60; color: white;">
+                    <tr>
+                        <th style="padding: 10px; text-align: center; border-radius: 4px 0 0 4px;">Folio</th>
+                        <th style="padding: 10px; text-align: left;">Fecha</th>
+                        <th style="padding: 10px; text-align: left;">Cliente</th>
+                        <th style="padding: 10px; text-align: left;">Pago</th>
+                        <th style="padding: 10px; text-align: center;">Estado</th>
+                        <th style="padding: 10px; text-align: right; border-radius: 0 4px 4px 0;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filas}
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 15px;">
+                Este documento es un reporte administrativo generado automáticamente para ${nombreTienda} y no tiene validez fiscal.
+            </div>
+        `;
+
+        // Opciones optimizadas para html2pdf
+        const opt = {
+            margin:       12,
+            filename:     `reporte_ventas_${periodo}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Generar y descargar
+        html2pdf().set(opt).from(container).save().then(() => {
+            mostrarNotificacionAdmin("Reporte PDF descargado con éxito.", "success");
+        }).catch(err => {
+            console.error(err);
+            mostrarNotificacionAdmin("Error al descargar el PDF.", "danger");
+        });
+
+    })
+    .catch(err => {
+        console.error(err);
+        mostrarNotificacionAdmin("Error al generar el reporte. Intenta de nuevo.", "danger");
+    });
+};

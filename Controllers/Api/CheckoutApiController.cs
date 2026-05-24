@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using LaPasaditaWeb.Data;
 using LaPasaditaWeb.Models;
 using Microsoft.Extensions.Configuration;
+using LaPasaditaWeb.Services;
 
 namespace LaPasaditaWeb.Controllers.Api
 {
@@ -17,11 +18,13 @@ namespace LaPasaditaWeb.Controllers.Api
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public CheckoutApiController(ApplicationDbContext context, IConfiguration configuration)
+        public CheckoutApiController(ApplicationDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         // GET: api/CheckoutApi/validar-cupon?codigo=BIENVENIDA10
@@ -304,6 +307,41 @@ namespace LaPasaditaWeb.Controllers.Api
             }
 
             await _context.SaveChangesAsync();
+
+            // Enviar correo de confirmación al cliente
+            string logoHtml = "";
+            if (configTienda != null && !string.IsNullOrEmpty(configTienda.LogoUrl))
+            {
+                logoHtml = $"<div style='text-align: center; margin-bottom: 15px;'><img src='{configTienda.LogoUrl}' alt='Logo' style='max-height: 80px; max-width: 250px;' /></div>";
+            }
+            string nombreTienda = configTienda?.NombreTienda ?? "La Pasadita";
+
+            string cuerpoCorreo = $@"
+                <div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; border: 1px solid #ddd; border-radius: 10px;'>
+                    {logoHtml}
+                    <h2 style='color: #28a745;'>¡Gracias por tu compra en {nombreTienda}!</h2>
+                    <p>Hola <strong>{nuevoPedido.NombreCliente}</strong>,</p>
+                    <p>Hemos recibido tu pedido <strong>#{nuevoPedido.Id}</strong> exitosamente. Pronto comenzaremos a prepararlo.</p>
+                    <table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>
+                        <tr style='background-color: #f8f9fa;'>
+                            <th style='padding: 10px; border-bottom: 2px solid #dee2e6; text-align: left;'>Total a Pagar</th>
+                            <td style='padding: 10px; border-bottom: 2px solid #dee2e6; font-weight: bold; font-size: 1.2em;'>${nuevoPedido.Total} MXN</td>
+                        </tr>
+                        <tr>
+                            <th style='padding: 10px; border-bottom: 1px solid #dee2e6; text-align: left;'>Método de Pago</th>
+                            <td style='padding: 10px; border-bottom: 1px solid #dee2e6;'>{nuevoPedido.MetodoPago}</td>
+                        </tr>
+                        <tr>
+                            <th style='padding: 10px; border-bottom: 1px solid #dee2e6; text-align: left;'>Dirección de Envío</th>
+                            <td style='padding: 10px; border-bottom: 1px solid #dee2e6;'>{nuevoPedido.DireccionEnvio}</td>
+                        </tr>
+                    </table>
+                    <p style='margin-top: 20px; color: #6c757d; font-size: 0.9em;'>
+                        Si tienes alguna duda, responde a este correo o comunícate con nosotros.
+                    </p>
+                </div>";
+            
+            _ = _emailService.EnviarCorreoAsync(nuevoPedido.EmailCliente, $"Confirmación de Pedido #{nuevoPedido.Id} - La Pasadita", cuerpoCorreo);
 
             return Ok(new
             {

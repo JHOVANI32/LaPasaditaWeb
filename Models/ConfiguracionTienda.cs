@@ -29,5 +29,19 @@ namespace LaPasaditaWeb.Models
         [Required]
         [Column(TypeName = "numeric(18,2)")]
         public decimal CostoEnvioBase { get; set; }
+
+        [StringLength(100)]
+        public string? SmtpEmail { get; set; } = "jhovanipedro9@gmail.com";
+
+        [StringLength(200)]
+        public string? SmtpPassword { get; set; }
+
+        [StringLength(100)]
+        public string? SmtpHost { get; set; } = "smtp.gmail.com";
+
+        public int SmtpPort { get; set; } = 587;
+
+        [StringLength(500)]
+        public string? LogoUrl { get; set; }
     }
 }

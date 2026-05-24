@@ -67,9 +67,58 @@
     </div>
 </div>
 
+<!-- Sección de Receta y Mapa (Grid Side-by-Side) -->
+<div class="container py-4 mb-5">
+    <div class="row g-4">
+        <!-- Columna Izquierda: Receta del Día (TheMealDB) -->
+        <div class="col-lg-6 d-flex">
+            <div class="card border-0 shadow-sm w-100 overflow-hidden d-flex flex-column" style="border-radius: var(--radius-md); background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                <div class="position-relative w-100" style="height: 250px;">
+                    <div id="receta-spinner" class="d-flex justify-content-center align-items-center w-100 h-100 position-absolute bg-light">
+                        <div class="spinner-border text-warning" role="status"></div>
+                    </div>
+                    <img id="receta-img" src="" class="img-fluid w-100 h-100 d-none" style="object-fit: cover;" alt="Receta del día">
+                </div>
+                <div class="card-body p-4 d-flex flex-column flex-grow-1">
+                    <div>
+                        <span class="badge bg-warning text-dark mb-2 fw-bold px-3 py-2 rounded-pill"><i class="bi bi-star-fill text-danger"></i> Sugerencia del Día</span>
+                        <h4 id="receta-titulo" class="fw-bold text-dark mb-2">Cargando receta deliciosa...</h4>
+                        <p id="receta-categoria" class="text-muted small fw-bold mb-3 text-uppercase"><i class="bi bi-tag-fill"></i> ...</p>
+                    </div>
+                    <div class="mt-auto">
+                        <h6 class="fw-bold text-primary mb-2"><i class="bi bi-basket2-fill"></i> Ingredientes principales:</h6>
+                        <ul id="receta-ingredientes" class="list-unstyled row mb-4 small text-dark">
+                            <!-- Ingredientes JS -->
+                        </ul>
+                        <a id="receta-link" href="#" target="_blank" class="btn btn-outline-danger w-100 fw-bold rounded-pill px-4 py-2 d-none mt-2">
+                            <i class="bi bi-youtube"></i> Ver Video Tutorial
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Mapa Dinámico (Leaflet) -->
+        <div class="col-lg-6 d-flex">
+            <div class="card border-0 shadow-sm w-100 overflow-hidden d-flex flex-column" style="border-radius: var(--radius-md);">
+                <div class="card-body p-4 text-center pb-2">
+                    <h4 class="fw-bold m-0"><i class="bi bi-geo-alt-fill text-danger"></i> Encuéntranos Físicamente</h4>
+                    <p class="text-muted small mt-1 mb-2">Visítanos en nuestra sucursal. ¡Estamos listos para atenderte!</p>
+                </div>
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+                <!-- Contenedor del mapa que toma el resto del espacio -->
+                <div id="mapa-tienda" class="w-100 flex-grow-1" style="min-height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         window.promocionesActivas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PromocionesActivas ?? new List<LaPasaditaWeb.Models.Promocion>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
     </script>
     <script src="~/js/catalogo.js" asp-append-version="true"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/recetas.js" asp-append-version="true"></script>
+    <script src="~/js/mapa.js" asp-append-version="true"></script>
 }

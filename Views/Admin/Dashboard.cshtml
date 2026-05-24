@@ -265,6 +265,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Fila de Exportación de Reportes PDF -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-pdf-fill text-danger"></i> Generación de Reportes PDF</h5>
+                        <p class="text-muted small mb-4">Descarga el consolidado de las ventas exitosas organizadas por diferentes periodos de tiempo.</p>
+                        <div class="d-flex flex-wrap gap-3">
+                            <button class="btn btn-outline-danger fw-bold" onclick="descargarReportePdf('dia')">
+                                <i class="bi bi-calendar-day"></i> Ventas del Día
+                            </button>
+                            <button class="btn btn-outline-danger fw-bold" onclick="descargarReportePdf('mes')">
+                                <i class="bi bi-calendar-month"></i> Ventas del Mes
+                            </button>
+                            <button class="btn btn-outline-danger fw-bold" onclick="descargarReportePdf('anio')">
+                                <i class="bi bi-calendar3"></i> Ventas del Año
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- PESTAÑA 2: INVENTARIO (CRUD COMPLETO DE PRODUCTOS) -->
@@ -491,6 +512,55 @@
                         <label for="configHorario" class="form-label small fw-bold text-muted">Horario de Atención</label>
                         <input type="text" id="configHorario" class="form-control" placeholder="Ej. Lunes a Sábado de 8:00 AM a 8:00 PM" style="border-radius: var(--radius-sm);">
                     </div>
+
+                    <h5 class="fw-bold mt-4 mb-3 border-top pt-3"><i class="bi bi-envelope-at-fill text-primary"></i> Configuración de Correo (SMTP)</h5>
+                    <p class="text-muted small">Configura las credenciales para que la tienda envíe correos (ej. recibos a clientes).</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="configSmtpEmail" class="form-label small fw-bold text-muted">Correo Remitente (SMTP)</label>
+                            <input type="email" id="configSmtpEmail" class="form-control" placeholder="ej. tienda@gmail.com" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="configSmtpPassword" class="form-label small fw-bold text-muted">Contraseña (App Password)</label>
+                            <input type="password" id="configSmtpPassword" class="form-control" placeholder="••••••••••••" style="border-radius: var(--radius-sm);">
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-8 mb-3 mb-md-0">
+                            <label for="configSmtpHost" class="form-label small fw-bold text-muted">Servidor SMTP</label>
+                            <input type="text" id="configSmtpHost" class="form-control" placeholder="ej. smtp.gmail.com" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="configSmtpPort" class="form-label small fw-bold text-muted">Puerto SMTP</label>
+                            <input type="number" id="configSmtpPort" class="form-control" placeholder="587" style="border-radius: var(--radius-sm);">
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mt-4 mb-3 border-top pt-3"><i class="bi bi-palette-fill text-warning"></i> Personalización de Documentos</h5>
+                    <p class="text-muted small">Configura el logotipo que aparecerá en los reportes PDF de ventas y en los tickets de confirmación que reciben tus clientes por correo electrónico.</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8 mb-3 mb-md-0">
+                            <label for="configLogoUrl" class="form-label small fw-bold text-muted">URL del Logotipo de la Tienda</label>
+                            <input type="url" id="configLogoUrl" class="form-control" placeholder="https://ejemplo.com/mi-logo.png" style="border-radius: var(--radius-sm);">
+                            <span class="text-muted" style="font-size: 0.7rem;">Pega la dirección web (URL) de tu logotipo. Debe ser una imagen pública en formato PNG o JPG.</span>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-center justify-content-center">
+                            <div id="logoPreviewContainer" class="text-center p-3 rounded" style="border: 2px dashed #dee2e6; min-height: 90px; width: 100%; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                                <div id="logoPreviewPlaceholder">
+                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted small m-0">Vista previa</p>
+                                </div>
+                                <img id="logoPreviewImg" src="" alt="Vista previa del logo" style="max-height: 70px; max-width: 100%; display: none; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border small mb-4" role="alert">
+                        <i class="bi bi-lightbulb text-warning"></i> <strong>Consejo:</strong> Si no tienes tu logo en internet, puedes subirlo gratis a <a href="https://imgbb.com/" target="_blank" rel="noopener">imgbb.com</a> o <a href="https://imgur.com/" target="_blank" rel="noopener">imgur.com</a> y pegar aquí el enlace directo de la imagen.
+                    </div>
+
                     <button type="submit" class="btn btn-success fw-bold px-4 py-2 shadow-sm" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
                         <i class="bi bi-save"></i> Guardar Configuración
                     </button>
@@ -891,6 +961,7 @@
 </div>
 @section Scripts {
     <script src="~/js/admin.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Chart.js para las gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>

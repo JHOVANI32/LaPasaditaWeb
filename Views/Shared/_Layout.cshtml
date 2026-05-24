@@ -119,6 +119,14 @@
                     </ul>
                     
                     <div class="d-flex align-items-center gap-3">
+                        <!-- Widget Clima -->
+                        <div id="weather-widget" class="d-none d-lg-flex align-items-center bg-light text-dark px-3 py-1 rounded-pill shadow-sm border" style="font-size: 0.9rem; cursor: help;" title="Clima Local">
+                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status" id="weather-spinner">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <i id="weather-icon" class="bi d-none me-2 fs-5 text-primary"></i>
+                            <span id="weather-temp" class="fw-bold text-muted">Clima...</span>
+                        </div>
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
                             <div class="dropdown">
@@ -293,6 +301,59 @@
                 msgs.innerHTML += `<div class="msg msg-ai" style="color:red">Error de conexión.</div>`;
             }
             msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        // Lógica del Clima (Open-Meteo API)
+        document.addEventListener("DOMContentLoaded", () => {
+            obtenerClima();
+        });
+
+        function obtenerClima() {
+            // Intentar Geolocalización, sino usar CDMX por defecto (19.43, -99.13)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+                    err => fetchWeather(19.4326, -99.1332) // Fallback CDMX
+                );
+            } else {
+                fetchWeather(19.4326, -99.1332);
+            }
+        }
+
+        async function fetchWeather(lat, lon) {
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Error API clima");
+                
+                const data = await res.json();
+                const temp = data.current_weather.temperature;
+                const wcode = data.current_weather.weathercode;
+                
+                let iconClass = "bi-cloud-sun";
+                // Mapeo básico de WMO codes
+                if (wcode === 0) iconClass = "bi-sun text-warning"; // Despejado
+                else if (wcode >= 1 && wcode <= 3) iconClass = "bi-cloud-sun text-secondary"; // Nublado parcial
+                else if (wcode >= 45 && wcode <= 48) iconClass = "bi-cloud-haze text-secondary"; // Niebla
+                else if (wcode >= 51 && wcode <= 67) iconClass = "bi-cloud-rain text-info"; // Lluvia
+                else if (wcode >= 71 && wcode <= 82) iconClass = "bi-cloud-snow text-primary"; // Nieve
+                else if (wcode >= 95) iconClass = "bi-cloud-lightning-rain text-danger"; // Tormenta
+                
+                document.getElementById("weather-spinner").classList.add("d-none");
+                
+                const iconEl = document.getElementById("weather-icon");
+                iconEl.className = `bi ${iconClass} me-2 fs-5`;
+                iconEl.classList.remove("d-none");
+                
+                const tempEl = document.getElementById("weather-temp");
+                tempEl.textContent = `${temp}°C`;
+                tempEl.classList.remove("text-muted");
+                tempEl.classList.add("text-dark");
+                
+            } catch (error) {
+                console.error("Clima no disponible:", error);
+                document.getElementById("weather-widget").classList.add("d-none");
+            }
         }
     </script>
     @await RenderSectionAsync("Scripts", required: false)

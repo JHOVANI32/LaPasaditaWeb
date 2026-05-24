@@ -59,6 +59,16 @@ namespace LaPasaditaWeb.Controllers.Api
                 config.DireccionFisica = configUpdate.DireccionFisica;
                 config.HorarioAtencion = configUpdate.HorarioAtencion;
                 config.CostoEnvioBase = configUpdate.CostoEnvioBase;
+                
+                // SMTP Config
+                config.SmtpEmail = configUpdate.SmtpEmail;
+                config.SmtpPassword = configUpdate.SmtpPassword;
+                config.SmtpHost = configUpdate.SmtpHost;
+                config.SmtpPort = configUpdate.SmtpPort;
+
+                // Logo/Branding
+                config.LogoUrl = configUpdate.LogoUrl;
+
                 _context.ConfiguracionTienda.Update(config);
             }
 

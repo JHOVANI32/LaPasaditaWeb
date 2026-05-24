@@ -1,6 +1,7 @@
 // Proyecto: La Pasadita - Programación Web III | Desarrollador: Jhovani Hernandez Pablo
 using Microsoft.EntityFrameworkCore;
 using LaPasaditaWeb.Data;
+using LaPasaditaWeb.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromDays(365);
         options.SlidingExpiration = true;
     });
+
+// Registrar Servicio de Correo
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddControllersWithViews();
 
