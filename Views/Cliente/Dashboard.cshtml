@@ -530,7 +530,11 @@
                 }, 500);
             })
             .catch(err => {
-                alert(err.message);
+                if (err.message === "Failed to fetch") {
+                    alert("No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor para aplicar la última actualización. Por favor, espera 1 minuto y vuelve a intentar.");
+                } else {
+                    alert(err.message);
+                }
             });
         };
 
@@ -725,7 +729,11 @@
                 }, 500);
             })
             .catch(err => {
-                alert(err.message);
+                if (err.message === "Failed to fetch") {
+                    alert("No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor para aplicar la última actualización. Por favor, espera 1 minuto y vuelve a intentar.");
+                } else {
+                    alert(err.message);
+                }
             });
         };
     </script>
