@@ -175,6 +175,22 @@
                         </div>
                     </div>
 
+                    <!-- Añadir Nuevo Producto a la Edición -->
+                    <h6 class="fw-bold mb-3 border-bottom pb-2 text-success"><i class="bi bi-plus-circle-fill"></i> Añadir Producto al Pedido</h6>
+                    <div class="row g-2 mb-4 align-items-end">
+                        <div class="col-md-8">
+                            <label for="selectNuevoProducto" class="form-label small fw-bold text-muted mb-1">Selecciona un producto para añadir</label>
+                            <select id="selectNuevoProducto" class="form-select" style="border-radius: var(--radius-sm);">
+                                <option value="">Cargando catálogo de productos...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button type="button" class="btn btn-outline-success fw-bold" onclick="agregarNuevoProductoAEdicion()" style="border-radius: var(--radius-sm); min-height: 38px;">
+                                <i class="bi bi-cart-plus-fill"></i> Agregar Producto
+                            </button>
+                        </div>
+                    </div>
+
                     <h6 class="fw-bold mb-3 border-bottom pb-2 text-success"><i class="bi bi-basket-fill"></i> Artículos del Pedido</h6>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
@@ -519,6 +535,7 @@
         };
 
         let articulosEditar = []; // Guardará temporalmente los productos a editar
+        let catalogoProductos = []; // Guardará los productos activos de la tienda
 
         window.abrirModalEditarPedido = function() {
             const pedidoId = document.getElementById("det-pedido-id").textContent.replace("#", "");
@@ -542,12 +559,65 @@
                 subtotal: d.subtotal
             }));
 
+            // Cargar catálogo de productos activos para poder añadir nuevos productos
+            const select = document.getElementById("selectNuevoProducto");
+            select.innerHTML = '<option value="">Cargando catálogo...</option>';
+
+            fetch("/api/CatalogoApi")
+                .then(res => {
+                    if (!res.ok) throw new Error("No se pudo cargar el catálogo.");
+                    return res.json();
+                })
+                .then(data => {
+                    catalogoProductos = data.productos || [];
+                    let optionsHtml = '<option value="">-- Selecciona un producto para agregar --</option>';
+                    catalogoProductos.forEach(p => {
+                        optionsHtml += `<option value="${p.id}">${p.nombre} - $${p.precio.toFixed(2)} (Stock: ${p.stock})</option>`;
+                    });
+                    select.innerHTML = optionsHtml;
+                })
+                .catch(err => {
+                    console.error("Error al obtener catálogo:", err);
+                    select.innerHTML = '<option value="">Error al cargar catálogo de productos</option>';
+                });
+
             renderizarArticulosEdicion();
 
             // Abrir modal de Bootstrap
             const modalEl = document.getElementById("modalEditarPedido");
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
+        };
+
+        window.agregarNuevoProductoAEdicion = function() {
+            const select = document.getElementById("selectNuevoProducto");
+            const prodId = parseInt(select.value);
+            if (!prodId) {
+                alert("Por favor selecciona un producto válido.");
+                return;
+            }
+
+            const existe = articulosEditar.some(a => a.productoId === prodId);
+            if (existe) {
+                alert("Este producto ya está en tu pedido. Puedes modificar su cantidad en la tabla de abajo.");
+                return;
+            }
+
+            const prod = catalogoProductos.find(p => p.id === prodId);
+            if (!prod) return;
+
+            articulosEditar.push({
+                id: 0,
+                productoId: prod.id,
+                nombreProducto: prod.nombre,
+                imagenUrl: prod.imagenUrl,
+                cantidad: 1,
+                precioUnitario: prod.precio,
+                subtotal: prod.precio
+            });
+
+            select.value = "";
+            renderizarArticulosEdicion();
         };
 
         function renderizarArticulosEdicion() {
