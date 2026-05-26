@@ -303,10 +303,117 @@
             msgs.scrollTop = msgs.scrollHeight;
         }
 
-        // Lógica del Clima (Open-Meteo API)
+        // Lógica del Clima y Validador Universal de Formularios
         document.addEventListener("DOMContentLoaded", () => {
             obtenerClima();
+            inicializarValidadorFormularios();
         });
+
+        function inicializarValidadorFormularios() {
+            // Buscar todos los formularios de la página
+            const forms = document.querySelectorAll("form");
+            forms.forEach(form => {
+                // Quitar globos de diálogo nativos del navegador ("Rellena este campo")
+                form.setAttribute("novalidate", "true");
+
+                form.addEventListener("submit", function(event) {
+                    let formIsValid = true;
+                    
+                    // Buscar campos con el atributo "required"
+                    const inputs = form.querySelectorAll("input[required], textarea[required], select[required]");
+                    inputs.forEach(input => {
+                        // Limpiar error anterior
+                        const prevFeedback = input.parentElement.querySelector(".custom-invalid-feedback");
+                        if (prevFeedback) prevFeedback.remove();
+                        input.classList.remove("is-invalid");
+
+                        let fieldIsValid = true;
+                        let errorMsg = "";
+
+                        // Validar si está vacío
+                        if (!input.value.trim()) {
+                            fieldIsValid = false;
+                            
+                            // Intentar extraer el nombre del campo desde la etiqueta <label> o el placeholder
+                            let fieldName = "Este campo";
+                            const label = form.querySelector(`label[for="${input.id}"]`);
+                            if (label) {
+                                fieldName = label.textContent.replace("*", "").trim();
+                            } else if (input.placeholder) {
+                                fieldName = input.placeholder.trim();
+                            }
+                            
+                            // Limpiar íconos o caracteres especiales del nombre del campo
+                            fieldName = fieldName.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '').trim();
+
+                            errorMsg = `El ${fieldName.toLowerCase()} es obligatorio.`;
+                            
+                            // Ajustar concordancia de género en español de manera inteligente
+                            const fnLower = fieldName.toLowerCase();
+                            if (fnLower.endsWith("a") || fnLower.includes("contraseña") || fnLower.includes("dirección") || fnLower.includes("carrera") || fnLower.includes("entrega") || fnLower.includes("ubicación")) {
+                                errorMsg = `La ${fnLower} es obligatoria.`;
+                            }
+                        } 
+                        // Validar formato de email si no está vacío
+                        else if (input.type === "email" || input.id === "email" || input.name === "email") {
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!emailRegex.test(input.value.trim())) {
+                                fieldIsValid = false;
+                                errorMsg = "Ingresa un correo electrónico válido.";
+                            }
+                        }
+
+                        // Si el campo es inválido, aplicar diseño premium de error
+                        if (!fieldIsValid) {
+                            formIsValid = false;
+                            input.classList.add("is-invalid");
+                            
+                            const feedback = document.createElement("div");
+                            feedback.className = "custom-invalid-feedback small text-danger mt-1 fw-bold text-start";
+                            feedback.style.display = "block";
+                            feedback.style.fontSize = "0.8rem";
+                            feedback.style.color = "#dc3545"; // Rojo Bootstrap
+                            feedback.textContent = errorMsg;
+                            
+                            // Insertar debajo del input
+                            if (input.parentElement.classList.contains("form-floating")) {
+                                input.parentElement.appendChild(feedback);
+                            } else {
+                                // Para layouts de formulario normales
+                                input.parentNode.insertBefore(feedback, input.nextSibling);
+                            }
+                        }
+                    });
+
+                    if (!formIsValid) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        // Hacer foco en el primer elemento con error
+                        const firstInvalid = form.querySelector(".is-invalid");
+                        if (firstInvalid) firstInvalid.focus();
+                    }
+                });
+
+                // Quitar el color rojo de error y mensaje en tiempo real al escribir
+                const inputs = form.querySelectorAll("input, textarea, select");
+                inputs.forEach(input => {
+                    input.addEventListener("input", function() {
+                        if (input.value.trim()) {
+                            input.classList.remove("is-invalid");
+                            const prevFeedback = input.parentElement.querySelector(".custom-invalid-feedback");
+                            if (prevFeedback) prevFeedback.remove();
+                        }
+                    });
+                    input.addEventListener("change", function() {
+                        if (input.value.trim()) {
+                            input.classList.remove("is-invalid");
+                            const prevFeedback = input.parentElement.querySelector(".custom-invalid-feedback");
+                            if (prevFeedback) prevFeedback.remove();
+                        }
+                    });
+                });
+            });
+        }
 
         function obtenerClima() {
             // Intentar Geolocalización, sino usar CDMX por defecto (19.43, -99.13)
