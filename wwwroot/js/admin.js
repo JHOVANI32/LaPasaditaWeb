@@ -146,6 +146,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }
+    // Listener for local logo file upload
+    const logoFileInput = document.getElementById('configLogoFile');
+    if (logoFileInput) {
+        logoFileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('logoFile', file);
+            fetch('/api/AdminConfiguracionApi/upload-logo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Error al subir el logo.');
+                return res.json();
+            })
+            .then(data => {
+                const urlInput = document.getElementById('configLogoUrl');
+                if (urlInput) {
+                    urlInput.value = data.logoUrl;
+                    const event = new Event('input', { bubbles: true });
+                    urlInput.dispatchEvent(event);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('No se pudo subir el logo. Verifica el archivo y permisos.');
+            });
+        });
+    }
 });
 
 // ==========================================

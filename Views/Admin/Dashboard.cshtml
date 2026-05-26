@@ -540,22 +540,9 @@
                     <h5 class="fw-bold mt-4 mb-3 border-top pt-3"><i class="bi bi-palette-fill text-warning"></i> Personalización de Documentos</h5>
                     <p class="text-muted small">Configura el logotipo que aparecerá en los reportes PDF de ventas y en los tickets de confirmación que reciben tus clientes por correo electrónico.</p>
                     
-                    <div class="row mb-3">
-                        <div class="col-md-8 mb-3 mb-md-0">
-                            <label for="configLogoUrl" class="form-label small fw-bold text-muted">URL del Logotipo de la Tienda</label>
-                            <input type="url" id="configLogoUrl" class="form-control" placeholder="https://ejemplo.com/mi-logo.png" style="border-radius: var(--radius-sm);">
-                            <span class="text-muted" style="font-size: 0.7rem;">Pega la dirección web (URL) de tu logotipo. Debe ser una imagen pública en formato PNG o JPG.</span>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-center justify-content-center">
-                            <div id="logoPreviewContainer" class="text-center p-3 rounded" style="border: 2px dashed #dee2e6; min-height: 90px; width: 100%; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
-                                <div id="logoPreviewPlaceholder">
-                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
-                                    <p class="text-muted small m-0">Vista previa</p>
-                                </div>
-                                <img id="logoPreviewImg" src="" alt="Vista previa del logo" style="max-height: 70px; max-width: 100%; display: none; border-radius: 4px;">
-                            </div>
-                        </div>
-                    </div>
+                            <label for="configLogoFile" class="form-label small fw-bold text-muted">Subir Logo (desde PC)</label>
+                            <input type="file" id="configLogoFile" class="form-control" accept="image/*" style="border-radius: var(--radius-sm);">
+                            <span class="text-muted" style="font-size: 0.7rem;">Selecciona una imagen PNG/JPG/GIF desde tu computadora.</span>
 
                     <div class="alert alert-light border small mb-4" role="alert">
                         <i class="bi bi-lightbulb text-warning"></i> <strong>Consejo:</strong> Si no tienes tu logo en internet, puedes subirlo gratis a <a href="https://imgbb.com/" target="_blank" rel="noopener">imgbb.com</a> o <a href="https://imgur.com/" target="_blank" rel="noopener">imgur.com</a> y pegar aquí el enlace directo de la imagen.

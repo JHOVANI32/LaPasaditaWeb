@@ -74,6 +74,28 @@ namespace LaPasaditaWeb.Controllers.Api
 
             await _context.SaveChangesAsync();
             return Ok(new { mensaje = "Configuración actualizada con éxito." });
+        // POST: api/AdminConfiguracionApi/upload-logo
+        // Receives a file and stores it under wwwroot/uploads/logos, returns the public URL
+        [HttpPost("upload-logo")]
+        public async Task<IActionResult> UploadLogo([FromForm] IFormFile logoFile)
+        {
+            if (logoFile == null || logoFile.Length == 0)
+                return BadRequest(new { mensaje = "No se recibió ningún archivo." });
+
+            // Ensure safe file name
+            var fileName = Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + Path.GetExtension(logoFile.FileName);
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logos");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var filePath = Path.Combine(uploadsFolder, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await logoFile.CopyToAsync(stream);
+            }
+
+            // Build URL relative to site root
+            var url = $"/uploads/logos/{fileName}";
+            return Ok(new { logoUrl = url });
         }
-    }
-}
+
