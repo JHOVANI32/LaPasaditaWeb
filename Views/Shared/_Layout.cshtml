@@ -364,7 +364,7 @@
                         } 
                         // Validar formato de email si no está vacío
                         else if (input.type === "email" || input.id === "email" || input.name === "email") {
-                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
                             if (!emailRegex.test(input.value.trim())) {
                                 fieldIsValid = false;
                                 errorMsg = "Ingresa un correo electrónico válido.";
