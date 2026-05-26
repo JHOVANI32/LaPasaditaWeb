@@ -95,6 +95,12 @@ document.addEventListener("DOMContentLoaded", () => {
             formConfig.addEventListener("submit", guardarConfiguracion);
         }
 
+        // Agregar listener para probar SMTP
+        const btnTestSmtp = document.getElementById("btnTestSmtp");
+        if (btnTestSmtp) {
+            btnTestSmtp.addEventListener("click", probarConexionSmtp);
+        }
+
         // Agregar listener para guardar promoción
         const formPromocion = document.getElementById("promocionForm");
         if (formPromocion) {
@@ -1189,6 +1195,69 @@ function guardarConfiguracion(e) {
     .catch(err => {
         console.error("Error al guardar config:", err);
         mostrarNotificacionAdmin("Error al guardar configuración.", "danger");
+    });
+}
+
+function probarConexionSmtp() {
+    const destEmail = document.getElementById("smtpTestEmail").value.trim();
+    if (!destEmail) {
+        mostrarNotificacionAdmin("Introduce un correo destinatario para realizar la prueba.", "warning");
+        return;
+    }
+
+    const payload = {
+        destinatario: destEmail,
+        smtpEmail: document.getElementById("configSmtpEmail").value.trim(),
+        smtpPassword: document.getElementById("configSmtpPassword").value.trim(),
+        smtpHost: document.getElementById("configSmtpHost").value.trim(),
+        smtpPort: parseInt(document.getElementById("configSmtpPort").value.trim()) || 587,
+        nombreTienda: document.getElementById("configNombre").value.trim() || "La Pasadita"
+    };
+
+    if (!payload.smtpEmail || !payload.smtpPassword || !payload.smtpHost || !payload.smtpPort) {
+        mostrarNotificacionAdmin("Por favor completa los campos de SMTP (Correo, Contraseña, Servidor, Puerto) para poder probar.", "warning");
+        return;
+    }
+
+    // Mostrar spinner de carga
+    const btn = document.getElementById("btnTestSmtp");
+    const spinner = document.getElementById("btnTestSmtpSpinner");
+    const icon = document.getElementById("btnTestSmtpIcon");
+    const resultDiv = document.getElementById("smtpTestResult");
+
+    btn.disabled = true;
+    spinner.style.display = "inline-block";
+    icon.style.display = "none";
+    resultDiv.style.display = "none";
+    resultDiv.className = "mt-2 small p-2 rounded"; // reset classes
+
+    fetch("/api/AdminConfiguracionApi/test-smtp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.mensaje || "Error en la prueba de conexión SMTP.");
+        return data;
+    })
+    .then(data => {
+        resultDiv.style.display = "block";
+        resultDiv.classList.add("bg-success-subtle", "text-success-emphasis", "border", "border-success");
+        resultDiv.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> ${data.mensaje}`;
+        mostrarNotificacionAdmin("Prueba SMTP exitosa.", "success");
+    })
+    .catch(err => {
+        console.error("Error al probar SMTP:", err);
+        resultDiv.style.display = "block";
+        resultDiv.classList.add("bg-danger-subtle", "text-danger-emphasis", "border", "border-danger");
+        resultDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Fallo en la prueba:</strong> ${err.message}`;
+        mostrarNotificacionAdmin("Error al probar SMTP. Revisa los detalles.", "danger");
+    })
+    .finally(() => {
+        btn.disabled = false;
+        spinner.style.display = "none";
+        icon.style.display = "inline-block";
     });
 }
 

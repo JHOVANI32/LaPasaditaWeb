@@ -312,7 +312,12 @@ namespace LaPasaditaWeb.Controllers.Api
             string logoHtml = "";
             if (configTienda != null && !string.IsNullOrEmpty(configTienda.LogoUrl))
             {
-                logoHtml = $"<div style='text-align: center; margin-bottom: 15px;'><img src='{configTienda.LogoUrl}' alt='Logo' style='max-height: 80px; max-width: 250px;' /></div>";
+                string logoUrl = configTienda.LogoUrl;
+                if (logoUrl.StartsWith("/"))
+                {
+                    logoUrl = $"{Request.Scheme}://{Request.Host}{logoUrl}";
+                }
+                logoHtml = $"<div style='text-align: center; margin-bottom: 15px;'><img src='{logoUrl}' alt='Logo' style='max-height: 80px; max-width: 250px;' /></div>";
             }
             string nombreTienda = configTienda?.NombreTienda ?? "La Pasadita";
 
