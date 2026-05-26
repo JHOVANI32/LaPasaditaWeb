@@ -91,13 +91,33 @@
                     <!-- Datos de Envío y Pago -->
                     <div class="row g-3 p-3 bg-light rounded mb-4">
                         <div class="col-md-6 border-end">
+                            <div class="small fw-bold text-muted mb-1"><i class="bi bi-person-fill"></i> Cliente / Contacto:</div>
+                            <div class="small mb-2" id="det-cliente-contacto">Cargando...</div>
                             <div class="small fw-bold text-muted mb-1"><i class="bi bi-geo-fill"></i> Dirección de Envío:</div>
                             <div class="small" id="det-direccion">Cargando dirección...</div>
                         </div>
                         <div class="col-md-6 ps-md-3">
                             <div class="small fw-bold text-muted mb-1"><i class="bi bi-wallet2"></i> Método de Pago:</div>
-                            <div class="small" id="det-pago">Efectivo contra entrega</div>
+                            <div class="small mb-2" id="det-pago">Efectivo contra entrega</div>
                             <div class="small fw-bold text-success mt-2" style="font-size: 1.1rem;">Total Pagado: <span id="det-total">$0.00</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones del Pedido (Solo si es Pendiente) -->
+                    <div id="det-acciones-pendiente" class="d-none mb-4 p-3 border border-warning rounded-3 bg-warning bg-opacity-10" style="border-radius: var(--radius-sm);">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <div>
+                                <strong class="text-dark small d-block"><i class="bi bi-info-circle-fill"></i> ¿Deseas modificar o cancelar?</strong>
+                                <span class="text-muted" style="font-size: 0.75rem;">Mientras el pedido esté en estado "Pendiente", puedes modificar los datos o cancelarlo.</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary fw-bold" onclick="abrirModalEditarPedido()" style="border-radius: var(--radius-sm);">
+                                    <i class="bi bi-pencil-square"></i> Modificar Pedido
+                                </button>
+                                <button class="btn btn-sm btn-danger fw-bold" onclick="confirmarCancelarPedido()" style="border-radius: var(--radius-sm);">
+                                    <i class="bi bi-x-circle"></i> Cancelar Pedido
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -123,6 +143,60 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA EDITAR PEDIDO -->
+<div class="modal fade" id="modalEditarPedido" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalEditarPedidoTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-md);">
+            <div class="modal-header bg-success text-white py-3" style="background-color: var(--primary) !important; border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md);">
+                <h5 class="modal-title fw-bold" id="modalEditarPedidoTitulo"><i class="bi bi-pencil-square"></i> Modificar Pedido <span id="modal-edit-pedido-id">#0</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editarPedidoForm">
+                    <input type="hidden" id="editPedidoId">
+                    <h6 class="fw-bold mb-3 border-bottom pb-2 text-success"><i class="bi bi-person-lines-fill"></i> Datos de Contacto y Envío</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="editNombre" class="form-label small fw-bold text-muted">Nombre del Destinatario</label>
+                            <input type="text" id="editNombre" class="form-control" required style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editTelefono" class="form-label small fw-bold text-muted">Teléfono de Contacto</label>
+                            <input type="text" id="editTelefono" class="form-control" required style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-12">
+                            <label for="editDireccion" class="form-label small fw-bold text-muted">Dirección Completa de Envío</label>
+                            <textarea id="editDireccion" class="form-control" rows="2" required style="border-radius: var(--radius-sm);"></textarea>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mb-3 border-bottom pb-2 text-success"><i class="bi bi-basket-fill"></i> Artículos del Pedido</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center" style="width: 130px;">Cantidad</th>
+                                    <th class="text-end">Precio Unitario</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th class="text-center" style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="edit-articulos-body">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-outline-secondary fw-bold px-4" data-bs-dismiss="modal" style="border-radius: var(--radius-sm);">Cerrar</button>
+                <button type="button" class="btn btn-success fw-bold px-4" onclick="guardarCambiosPedido()" style="border-radius: var(--radius-sm); background-color: var(--primary) !important; border: none;">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -299,8 +373,17 @@
             document.getElementById("det-pedido-id").textContent = `#${pedido.id}`;
             document.getElementById("det-pedido-fecha").textContent = new Date(pedido.fechaPedido).toLocaleString('es-MX');
             document.getElementById("det-direccion").textContent = pedido.direccionEnvio;
+            document.getElementById("det-cliente-contacto").textContent = `${pedido.nombreCliente} ${pedido.telefonoCliente ? '(Tel: ' + pedido.telefonoCliente + ')' : ''}`;
             document.getElementById("det-pago").textContent = `Pago en ${pedido.metodoPago} contra entrega`;
             document.getElementById("det-total").textContent = `$${pedido.total.toFixed(2)}`;
+
+            // Mostrar/ocultar panel de acciones de edición/cancelación
+            const accionesDiv = document.getElementById("det-acciones-pendiente");
+            if (pedido.estado === "Pendiente") {
+                accionesDiv.classList.remove("d-none");
+            } else {
+                accionesDiv.classList.add("d-none");
+            }
 
             const estBadge = document.getElementById("det-pedido-estado");
             estBadge.textContent = pedido.estado;
@@ -407,5 +490,173 @@
                 }
             });
         }
+
+        window.confirmarCancelarPedido = function() {
+            const pedidoId = document.getElementById("det-pedido-id").textContent.replace("#", "");
+            if (!confirm(`¿Estás completamente seguro de que deseas cancelar el pedido #${pedidoId}? Esta acción devolverá los productos al stock y no se puede deshacer.`)) {
+                return;
+            }
+
+            fetch(`/api/ClientePedidosApi/${pedidoId}/cancelar`, {
+                method: "POST"
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.mensaje || "Error al cancelar el pedido.");
+                return data;
+            })
+            .then(data => {
+                alert(data.mensaje);
+                cargarPedidosCliente(); // Recargar la lista
+                // Recargar el detalle del pedido actual
+                setTimeout(() => {
+                    seleccionarPedido(parseInt(pedidoId));
+                }, 500);
+            })
+            .catch(err => {
+                alert(err.message);
+            });
+        };
+
+        let articulosEditar = []; // Guardará temporalmente los productos a editar
+
+        window.abrirModalEditarPedido = function() {
+            const pedidoId = document.getElementById("det-pedido-id").textContent.replace("#", "");
+            const pedido = pedidosLocales.find(p => p.id === parseInt(pedidoId));
+            if (!pedido) return;
+
+            document.getElementById("modal-edit-pedido-id").textContent = `#${pedido.id}`;
+            document.getElementById("editPedidoId").value = pedido.id;
+            document.getElementById("editNombre").value = pedido.nombreCliente || "";
+            document.getElementById("editTelefono").value = pedido.telefonoCliente || "";
+            document.getElementById("editDireccion").value = pedido.direccionEnvio || "";
+
+            // Clonar artículos del pedido para editar de forma segura
+            articulosEditar = pedido.detalles.map(d => ({
+                id: d.id,
+                productoId: d.productoId,
+                nombreProducto: d.nombreProducto,
+                imagenUrl: d.imagenUrl,
+                cantidad: d.cantidad,
+                precioUnitario: d.precioUnitario,
+                subtotal: d.subtotal
+            }));
+
+            renderizarArticulosEdicion();
+
+            // Abrir modal de Bootstrap
+            const modalEl = document.getElementById("modalEditarPedido");
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        };
+
+        function renderizarArticulosEdicion() {
+            const tbody = document.getElementById("edit-articulos-body");
+            let html = "";
+
+            if (articulosEditar.length === 0) {
+                html = `<tr><td colspan="5" class="text-center py-4 text-muted">No hay artículos en este pedido. Agrégalos o cancela el pedido.</td></tr>`;
+            } else {
+                articulosEditar.forEach((art, idx) => {
+                    html += `
+                        <tr id="edit-row-${art.productoId}">
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="${art.imagenUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=50&q=80'}" alt="${art.nombreProducto}" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">
+                                    <span class="fw-semibold text-dark small">${art.nombreProducto}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="input-group input-group-sm justify-content-center">
+                                    <button class="btn btn-outline-secondary px-2" type="button" onclick="cambiarCantEdicion(${art.productoId}, -1)">-</button>
+                                    <input type="text" class="form-control text-center bg-white" value="${art.cantidad}" readonly style="max-width: 45px;">
+                                    <button class="btn btn-outline-secondary px-2" type="button" onclick="cambiarCantEdicion(${art.productoId}, 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="text-end small">$${art.precioUnitario.toFixed(2)}</td>
+                            <td class="text-end fw-bold text-muted small">$${(art.cantidad * art.precioUnitario).toFixed(2)}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="eliminarArtEdicion(${art.productoId})">
+                                    <i class="bi bi-trash fs-5"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            tbody.innerHTML = html;
+        }
+
+        window.cambiarCantEdicion = function(prodId, delta) {
+            const art = articulosEditar.find(a => a.productoId === prodId);
+            if (!art) return;
+
+            const nuevaCant = art.cantidad + delta;
+            if (nuevaCant < 1) return;
+
+            art.cantidad = nuevaCant;
+            renderizarArticulosEdicion();
+        };
+
+        window.eliminarArtEdicion = function(prodId) {
+            if (!confirm("¿Deseas remover este artículo de tu pedido?")) return;
+            articulosEditar = articulosEditar.filter(a => a.productoId !== prodId);
+            renderizarArticulosEdicion();
+        };
+
+        window.guardarCambiosPedido = function() {
+            const pedidoId = document.getElementById("editPedidoId").value;
+            const nombre = document.getElementById("editNombre").value.trim();
+            const telefono = document.getElementById("editTelefono").value.trim();
+            const direccion = document.getElementById("editDireccion").value.trim();
+
+            if (!nombre || !telefono || !direccion) {
+                alert("Por favor completa los datos de destinatario, teléfono y dirección.");
+                return;
+            }
+
+            if (articulosEditar.length === 0) {
+                alert("Debes tener al menos un artículo en tu pedido. Si no deseas comprar nada, puedes cancelar el pedido.");
+                return;
+            }
+
+            const payload = {
+                nombreCliente: nombre,
+                telefonoCliente: telefono,
+                direccionEnvio: direccion,
+                detalles: articulosEditar.map(a => ({
+                    productoId: a.productoId,
+                    cantidad: a.cantidad
+                }))
+            };
+
+            fetch(`/api/ClientePedidosApi/${pedidoId}/editar`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.mensaje || "Error al modificar el pedido.");
+                return data;
+            })
+            .then(data => {
+                alert(data.mensaje);
+                
+                // Cerrar modal
+                const modalEl = document.getElementById("modalEditarPedido");
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.hide();
+
+                cargarPedidosCliente(); // Recargar la lista
+                // Recargar el detalle del pedido actual
+                setTimeout(() => {
+                    seleccionarPedido(parseInt(pedidoId));
+                }, 500);
+            })
+            .catch(err => {
+                alert(err.message);
+            });
+        };
     </script>
 }
