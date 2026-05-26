@@ -305,8 +305,16 @@
 
         // Lógica del Clima y Validador Universal de Formularios
         document.addEventListener("DOMContentLoaded", () => {
-            obtenerClima();
-            inicializarValidadorFormularios();
+            try {
+                obtenerClima();
+            } catch (e) {
+                console.error("Error al obtener clima:", e);
+            }
+            try {
+                inicializarValidadorFormularios();
+            } catch (e) {
+                console.error("Error al inicializar validador:", e);
+            }
         });
 
         function inicializarValidadorFormularios() {

@@ -25,7 +25,7 @@
                 </div>
             }
 
-            <form asp-action="Login" method="post" id="loginForm">
+            <form asp-action="Login" method="post" id="loginForm" novalidate>
                 @Html.AntiForgeryToken()
                 
                 <!-- Capturar el token de invitado para fusionar el carrito al loguearse -->

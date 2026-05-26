@@ -25,7 +25,7 @@
                 </div>
             }
 
-            <form asp-action="Register" method="post" id="registerForm">
+            <form asp-action="Register" method="post" id="registerForm" novalidate>
                 @Html.AntiForgeryToken()
                 
                 <!-- Capturar el token de invitado para migrar sus compras temporales -->
