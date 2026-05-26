@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LaPasaditaWeb.Data;
 using LaPasaditaWeb.Models;
-
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 namespace LaPasaditaWeb.Controllers.Api
 {
     [ApiController]
@@ -12,10 +14,12 @@ namespace LaPasaditaWeb.Controllers.Api
     public class AdminConfiguracionApiController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public AdminConfiguracionApiController(ApplicationDbContext context)
+        public AdminConfiguracionApiController(ApplicationDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         // GET: api/AdminConfiguracionApi
@@ -86,7 +90,7 @@ namespace LaPasaditaWeb.Controllers.Api
 
             // Ensure safe file name
             var fileName = Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + Path.GetExtension(logoFile.FileName);
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logos");
+            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "logos");
             if (!Directory.Exists(uploadsFolder))
                 Directory.CreateDirectory(uploadsFolder);
 
