@@ -287,6 +287,7 @@
 </style>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let pedidosLocales = [];
 
@@ -509,31 +510,62 @@
 
         window.confirmarCancelarPedido = function() {
             const pedidoId = document.getElementById("det-pedido-id").textContent.replace("#", "");
-            if (!confirm(`¿Estás completamente seguro de que deseas cancelar el pedido #${pedidoId}? Esta acción devolverá los productos al stock y no se puede deshacer.`)) {
-                return;
-            }
+            
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: `¿Deseas cancelar el pedido #${pedidoId}? Esta acción devolverá los productos al stock y no se puede deshacer.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, cancelar pedido',
+                cancelButtonText: 'No, mantener pedido',
+                background: '#ffffff',
+                customClass: {
+                    popup: 'swal2-border-radius'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Cancelando pedido...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
 
-            fetch(`/api/ClientePedidosApi/${pedidoId}/cancelar`, {
-                method: "POST"
-            })
-            .then(async res => {
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.mensaje || "Error al cancelar el pedido.");
-                return data;
-            })
-            .then(data => {
-                alert(data.mensaje);
-                cargarPedidosCliente(); // Recargar la lista
-                // Recargar el detalle del pedido actual
-                setTimeout(() => {
-                    seleccionarPedido(parseInt(pedidoId));
-                }, 500);
-            })
-            .catch(err => {
-                if (err.message === "Failed to fetch") {
-                    alert("No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor para aplicar la última actualización. Por favor, espera 1 minuto y vuelve a intentar.");
-                } else {
-                    alert(err.message);
+                    fetch(`/api/ClientePedidosApi/${pedidoId}/cancelar`, {
+                        method: "POST"
+                    })
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.mensaje || "Error al cancelar el pedido.");
+                        return data;
+                    })
+                    .then(data => {
+                        Swal.fire({
+                            title: '¡Cancelado!',
+                            text: data.mensaje,
+                            icon: 'success',
+                            confirmButtonColor: '#2e7d32'
+                        });
+                        cargarPedidosCliente(); // Recargar la lista
+                        setTimeout(() => {
+                            seleccionarPedido(parseInt(pedidoId));
+                        }, 500);
+                    })
+                    .catch(err => {
+                        let msg = err.message;
+                        if (msg === "Failed to fetch") {
+                            msg = "No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor para aplicar la última actualización. Por favor, espera 1 minuto y vuelve a intentar.";
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: msg,
+                            icon: 'error',
+                            confirmButtonColor: '#d33'
+                        });
+                    });
                 }
             });
         };
@@ -673,9 +705,21 @@
         };
 
         window.eliminarArtEdicion = function(prodId) {
-            if (!confirm("¿Deseas remover este artículo de tu pedido?")) return;
-            articulosEditar = articulosEditar.filter(a => a.productoId !== prodId);
-            renderizarArticulosEdicion();
+            Swal.fire({
+                title: '¿Remover artículo?',
+                text: '¿Deseas quitar este producto de tu pedido?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, remover',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    articulosEditar = articulosEditar.filter(a => a.productoId !== prodId);
+                    renderizarArticulosEdicion();
+                }
+            });
         };
 
         window.guardarCambiosPedido = function() {
@@ -685,12 +729,22 @@
             const direccion = document.getElementById("editDireccion").value.trim();
 
             if (!nombre || !telefono || !direccion) {
-                alert("Por favor completa los datos de destinatario, teléfono y dirección.");
+                Swal.fire({
+                    title: 'Datos Incompletos',
+                    text: 'Por favor completa los datos de destinatario, teléfono y dirección.',
+                    icon: 'warning',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
 
             if (articulosEditar.length === 0) {
-                alert("Debes tener al menos un artículo en tu pedido. Si no deseas comprar nada, puedes cancelar el pedido.");
+                Swal.fire({
+                    title: 'Pedido Vacío',
+                    text: 'Debes tener al menos un artículo en tu pedido. Si no deseas comprar nada, puedes cancelar el pedido.',
+                    icon: 'warning',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
 
@@ -704,6 +758,14 @@
                 }))
             };
 
+            Swal.fire({
+                title: 'Guardando cambios...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             fetch(`/api/ClientePedidosApi/${pedidoId}/editar`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -715,7 +777,12 @@
                 return data;
             })
             .then(data => {
-                alert(data.mensaje);
+                Swal.fire({
+                    title: '¡Modificado!',
+                    text: data.mensaje,
+                    icon: 'success',
+                    confirmButtonColor: '#2e7d32'
+                });
                 
                 // Cerrar modal
                 const modalEl = document.getElementById("modalEditarPedido");
@@ -723,17 +790,21 @@
                 modal.hide();
 
                 cargarPedidosCliente(); // Recargar la lista
-                // Recargar el detalle del pedido actual
                 setTimeout(() => {
                     seleccionarPedido(parseInt(pedidoId));
                 }, 500);
             })
             .catch(err => {
-                if (err.message === "Failed to fetch") {
-                    alert("No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor para aplicar la última actualización. Por favor, espera 1 minuto y vuelve a intentar.");
-                } else {
-                    alert(err.message);
+                let msg = err.message;
+                if (msg === "Failed to fetch") {
+                    msg = "No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor para aplicar la última actualización. Por favor, espera 1 minuto y vuelve a intentar.";
                 }
+                Swal.fire({
+                    title: 'Error',
+                    text: msg,
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
             });
         };
     </script>
