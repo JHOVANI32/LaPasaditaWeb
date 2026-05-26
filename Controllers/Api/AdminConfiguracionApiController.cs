@@ -74,6 +74,8 @@ namespace LaPasaditaWeb.Controllers.Api
 
             await _context.SaveChangesAsync();
             return Ok(new { mensaje = "Configuración actualizada con éxito." });
+        }
+
         // POST: api/AdminConfiguracionApi/upload-logo
         // Receives a file and stores it under wwwroot/uploads/logos, returns the public URL
         [HttpPost("upload-logo")]
@@ -98,4 +100,6 @@ namespace LaPasaditaWeb.Controllers.Api
             var url = $"/uploads/logos/{fileName}";
             return Ok(new { logoUrl = url });
         }
+    }
+}
 

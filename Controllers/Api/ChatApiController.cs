@@ -82,16 +82,23 @@ namespace LaPasaditaWeb.Controllers.Api
                                            .GetProperty("text")
                                            .GetString();
 
-                    return Ok(new { respuesta = aiMessage });
-                }
-                else
-                {
-                    return StatusCode((int)response.StatusCode, new { error = "Error en la API de Google Gemini.", detalles = responseString });
-                }
+                    // Si la respuesta de Gemini es exitosa, devolvemos el mensaje
+                // Si la respuesta de Gemini es exitosa, devolvemos el mensaje
+                return Ok(new { respuesta = aiMessage });
             }
+            else
+            {
+                // Si la API de Gemini falla (por ejemplo, problemas de red), devolvemos una respuesta simulada
+                var fallback = $"¡Hola! Soy el asistente virtual (modo simulación). Tu mensaje fue: '{request.Mensaje}'.";
+                return Ok(new { respuesta = fallback });
+            }
+        }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Error interno del servidor.", detalles = ex.Message });
+                // Si la API de Gemini falla por completo (por ejemplo, sin conexión a Internet o clave inválida),
+                // devolvemos una respuesta simulada y amigable para que el chatbot no se rompa.
+                var fallback = $"¡Hola! Soy el asistente virtual de La Pasadita. Actualmente estoy experimentando problemas de conexión a la IA, pero puedo decirte que tu mensaje fue: '{request.Mensaje}'. El horario es de Lunes a Sábado de 8am a 8pm.";
+                return Ok(new { respuesta = fallback });
             }
         }
     }

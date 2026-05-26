@@ -285,7 +285,7 @@
                 const response = await fetch('/api/ChatApi', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mensaje: txt })
+                    body: JSON.stringify({ Mensaje: txt })
                 });
 
                 document.getElementById(typingId).remove();
