@@ -14,7 +14,24 @@
         </button>
     </div>
 
-    <div class="row g-4">
+    <!-- Navegación por Pestañas (Tabs) -->
+    <ul class="nav nav-pills mb-4 border-bottom pb-2 gap-2" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold text-success" id="pedidos-tab" data-bs-toggle="tab" data-bs-target="#pedidos-pane" type="button" role="tab" aria-controls="pedidos-pane" aria-selected="true" style="border-radius: var(--radius-sm);">
+                <i class="bi bi-clock-history me-1"></i> Mis Pedidos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil-pane" type="button" role="tab" aria-controls="perfil-pane" aria-selected="false" style="border-radius: var(--radius-sm);" onclick="cargarPerfilCliente()">
+                <i class="bi bi-person-fill-gear me-1"></i> Mi Perfil
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="dashboardTabsContent">
+        <!-- PESTAÑA DE PEDIDOS -->
+        <div class="tab-pane fade show active" id="pedidos-pane" role="tabpanel" aria-labelledby="pedidos-tab">
+            <div class="row g-4">
         <!-- Columna Izquierda: Historial de Compras -->
         <div class="col-md-5">
             <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md); min-height: 400px;">
@@ -143,6 +160,62 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- PESTAÑA DE MI PERFIL -->
+    <div class="tab-pane fade" id="perfil-pane" role="tabpanel" aria-labelledby="perfil-tab">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm p-4 bg-white animate-fade-in" style="border-radius: var(--radius-md);">
+                    <h4 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-person-circle text-success"></i> Mi Perfil de Miembro</h4>
+                    <p class="text-muted small mb-4">Mantén tus datos actualizados para facilitar tus envíos y entregas.</p>
+                    
+                    <form id="perfilClienteForm" onsubmit="guardarPerfilCliente(event)">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="perfilNombre" class="form-label small fw-bold text-muted mb-1">Nombre Completo</label>
+                                <input type="text" id="perfilNombre" class="form-control" required style="border-radius: var(--radius-sm);">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="perfilEmail" class="form-label small fw-bold text-muted mb-1">Correo Electrónico</label>
+                                <input type="email" id="perfilEmail" class="form-control" required style="border-radius: var(--radius-sm);">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="perfilTelefono" class="form-label small fw-bold text-muted mb-1">Teléfono</label>
+                                <input type="text" id="perfilTelefono" class="form-control" placeholder="ej. 4831234567" style="border-radius: var(--radius-sm);">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted mb-1">Rol de Usuario</label>
+                                <input type="text" id="perfilRol" class="form-control bg-light" readonly style="border-radius: var(--radius-sm);">
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold mb-3 border-top pt-3 text-dark"><i class="bi bi-shield-lock text-success"></i> Cambiar Contraseña</h5>
+                        <p class="text-muted small mb-3">Si deseas cambiar tu contraseña, completa los campos de abajo. De lo contrario, déjalos en blanco.</p>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="perfilPasswordActual" class="form-label small fw-bold text-muted mb-1">Contraseña Actual</label>
+                                <input type="password" id="perfilPasswordActual" class="form-control" placeholder="••••••••" style="border-radius: var(--radius-sm);">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="perfilPasswordNuevo" class="form-label small fw-bold text-muted mb-1">Nueva Contraseña</label>
+                                <input type="password" id="perfilPasswordNuevo" class="form-control" placeholder="••••••••" style="border-radius: var(--radius-sm);">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="perfilPasswordConfirmar" class="form-label small fw-bold text-muted mb-1">Confirmar Nueva</label>
+                                <input type="password" id="perfilPasswordConfirmar" class="form-control" placeholder="••••••••" style="border-radius: var(--radius-sm);">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success fw-bold px-4 py-2" style="border-radius: var(--radius-sm); background-color: var(--primary) !important; border: none;">
+                            <i class="bi bi-save"></i> Guardar Cambios de Perfil
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -798,6 +871,138 @@
                 let msg = err.message;
                 if (msg === "Failed to fetch") {
                     msg = "No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor para aplicar la última actualización. Por favor, espera 1 minuto y vuelve a intentar.";
+                }
+                Swal.fire({
+                    title: 'Error',
+                    text: msg,
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
+            });
+        };
+
+        window.cargarPerfilCliente = function() {
+            fetch("/api/Perfil")
+                .then(res => {
+                    if (!res.ok) throw new Error("No autorizado");
+                    return res.json();
+                })
+                .then(data => {
+                    document.getElementById("perfilNombre").value = data.nombre || "";
+                    document.getElementById("perfilEmail").value = data.email || "";
+                    document.getElementById("perfilTelefono").value = data.telefono || "";
+                    document.getElementById("perfilRol").value = data.rol || "";
+                    
+                    document.getElementById("perfilPasswordActual").value = "";
+                    document.getElementById("perfilPasswordNuevo").value = "";
+                    document.getElementById("perfilPasswordConfirmar").value = "";
+                })
+                .catch(err => {
+                    console.error("Error al cargar perfil:", err);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo cargar el perfil del usuario.',
+                        icon: 'error',
+                        confirmButtonColor: '#d33'
+                    });
+                });
+        };
+
+        window.guardarPerfilCliente = function(e) {
+            e.preventDefault();
+
+            const nombre = document.getElementById("perfilNombre").value.trim();
+            const email = document.getElementById("perfilEmail").value.trim();
+            const telefono = document.getElementById("perfilTelefono").value.trim();
+            const passActual = document.getElementById("perfilPasswordActual").value;
+            const passNuevo = document.getElementById("perfilPasswordNuevo").value;
+            const passConfirm = document.getElementById("perfilPasswordConfirmar").value;
+
+            if (!nombre || !email) {
+                Swal.fire({
+                    title: 'Campos requeridos',
+                    text: 'Nombre y Correo electrónico son obligatorios.',
+                    icon: 'warning',
+                    confirmButtonColor: '#3085d6'
+                });
+                return;
+            }
+
+            if (passNuevo || passConfirm || passActual) {
+                if (!passActual) {
+                    Swal.fire({
+                        title: 'Contraseña Requerida',
+                        text: 'Debes ingresar tu contraseña actual para establecer una nueva.',
+                        icon: 'warning',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    return;
+                }
+                if (passNuevo !== passConfirm) {
+                    Swal.fire({
+                        title: 'Error de Confirmación',
+                        text: 'La nueva contraseña y su confirmación no coinciden.',
+                        icon: 'warning',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    return;
+                }
+                if (passNuevo.length < 4) {
+                    Swal.fire({
+                        title: 'Contraseña muy corta',
+                        text: 'La nueva contraseña debe tener al menos 4 caracteres.',
+                        icon: 'warning',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    return;
+                }
+            }
+
+            const payload = {
+                nombre: nombre,
+                email: email,
+                telefono: telefono,
+                passwordActual: passActual || null,
+                passwordNuevo: passNuevo || null
+            };
+
+            Swal.fire({
+                title: 'Actualizando perfil...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch("/api/Perfil", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.mensaje || "Error al actualizar el perfil.");
+                return data;
+            })
+            .then(data => {
+                Swal.fire({
+                    title: '¡Perfil Actualizado!',
+                    text: data.mensaje,
+                    icon: 'success',
+                    confirmButtonColor: '#2e7d32'
+                });
+                
+                const welcomeName = document.querySelector(".gradient-text + p strong");
+                if (welcomeName) {
+                    welcomeName.textContent = nombre;
+                }
+
+                cargarPerfilCliente();
+            })
+            .catch(err => {
+                let msg = err.message;
+                if (msg === "Failed to fetch") {
+                    msg = "No se pudo conectar con el servidor. Es muy probable que Railway esté reiniciando el servidor. Por favor, espera 1 minuto y vuelve a intentar.";
                 }
                 Swal.fire({
                     title: 'Error',

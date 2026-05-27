@@ -37,6 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         cargarPedidosAdmin();
                     } else if (window.location.hash === '#configuracion-pane' && typeof cargarConfiguracion === 'function') {
                         cargarConfiguracion();
+                    } else if (window.location.hash === '#perfil-pane' && typeof cargarPerfilAdmin === 'function') {
+                        cargarPerfilAdmin();
                     }
                 }
             }
@@ -1577,5 +1579,95 @@ window.descargarReportePdf = function(periodo) {
     .catch(err => {
         console.error(err);
         mostrarNotificacionAdmin("Error al generar el reporte. Intenta de nuevo.", "danger");
+    });
+};
+
+// ==========================================
+// 9. SECCIÓN DE GESTIÓN DE PERFIL (ADMINISTRADOR)
+// ==========================================
+
+window.cargarPerfilAdmin = function() {
+    fetch("/api/Perfil")
+        .then(res => {
+            if (!res.ok) throw new Error("No autorizado");
+            return res.json();
+        })
+        .then(data => {
+            document.getElementById("perfilAdminNombre").value = data.nombre || "";
+            document.getElementById("perfilAdminEmail").value = data.email || "";
+            document.getElementById("perfilAdminTelefono").value = data.telefono || "";
+            document.getElementById("perfilAdminRol").value = data.rol || "";
+            
+            document.getElementById("perfilAdminPasswordActual").value = "";
+            document.getElementById("perfilAdminPasswordNuevo").value = "";
+            document.getElementById("perfilAdminPasswordConfirmar").value = "";
+        })
+        .catch(err => {
+            console.error("Error al cargar perfil:", err);
+            mostrarNotificacionAdmin("No se pudo cargar tu perfil.", "danger");
+        });
+};
+
+window.guardarPerfilAdmin = function(e) {
+    e.preventDefault();
+
+    const nombre = document.getElementById("perfilAdminNombre").value.trim();
+    const email = document.getElementById("perfilAdminEmail").value.trim();
+    const telefono = document.getElementById("perfilAdminTelefono").value.trim();
+    const passActual = document.getElementById("perfilAdminPasswordActual").value;
+    const passNuevo = document.getElementById("perfilAdminPasswordNuevo").value;
+    const passConfirm = document.getElementById("perfilAdminPasswordConfirmar").value;
+
+    if (!nombre || !email) {
+        mostrarNotificacionAdmin("Nombre y Correo son obligatorios.", "warning");
+        return;
+    }
+
+    if (passNuevo || passConfirm || passActual) {
+        if (!passActual) {
+            mostrarNotificacionAdmin("Debes ingresar tu contraseña actual para cambiarla.", "warning");
+            return;
+        }
+        if (passNuevo !== passConfirm) {
+            mostrarNotificacionAdmin("La nueva contraseña y su confirmación no coinciden.", "warning");
+            return;
+        }
+        if (passNuevo.length < 4) {
+            mostrarNotificacionAdmin("La nueva contraseña debe tener al menos 4 caracteres.", "warning");
+            return;
+        }
+    }
+
+    const payload = {
+        nombre: nombre,
+        email: email,
+        telefono: telefono,
+        passwordActual: passActual || null,
+        passwordNuevo: passNuevo || null
+    };
+
+    fetch("/api/Perfil", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.mensaje || "Error al actualizar el perfil.");
+        return data;
+    })
+    .then(data => {
+        mostrarNotificacionAdmin(data.mensaje || "Perfil actualizado con éxito.", "success");
+        
+        const adminNameEl = document.querySelector(".dropdown-toggle");
+        if (adminNameEl) {
+            adminNameEl.innerHTML = `<i class="bi bi-person-circle"></i> ${nombre}`;
+        }
+
+        cargarPerfilAdmin();
+    })
+    .catch(err => {
+        console.error("Error al actualizar perfil:", err);
+        mostrarNotificacionAdmin(err.message, "danger");
     });
 };

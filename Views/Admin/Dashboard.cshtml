@@ -118,6 +118,11 @@
                 <i class="bi bi-gear"></i> Configuración Tienda
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success border-0 px-4 py-3" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil-pane" type="button" role="tab" aria-controls="perfil-pane" aria-selected="false" onclick="cargarPerfilAdmin()">
+                <i class="bi bi-person-fill-gear"></i> Mi Perfil
+            </button>
+        </li>
     </ul>
 
     <!-- Contenido de las Pestañas -->
@@ -595,6 +600,62 @@
 
                     <button type="submit" class="btn btn-success fw-bold px-4 py-2 shadow-sm" style="border-radius: var(--radius-sm); background-color: var(--primary); border: none;">
                         <i class="bi bi-save"></i> Guardar Configuración
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 8: MI PERFIL (ADMINISTRADOR) -->
+        <div class="tab-pane fade" id="perfil-pane" role="tabpanel" aria-labelledby="perfil-tab" tabindex="0">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--radius-md);">
+                <div class="d-flex align-items-center mb-3 border-bottom pb-2">
+                    <i class="bi bi-person-circle fs-3 text-success me-2"></i>
+                    <div>
+                        <h4 class="fw-bold m-0 text-dark">Mi Perfil de Administrador</h4>
+                        <p class="text-muted small m-0">Gestiona tus datos personales y credenciales de acceso de forma segura.</p>
+                    </div>
+                </div>
+
+                <form id="perfilAdminForm" onsubmit="guardarPerfilAdmin(event)">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="perfilAdminNombre" class="form-label small fw-bold text-muted mb-1">Nombre Completo</label>
+                            <input type="text" id="perfilAdminNombre" class="form-control" required style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="perfilAdminEmail" class="form-label small fw-bold text-muted mb-1">Correo Electrónico (Usuario)</label>
+                            <input type="email" id="perfilAdminEmail" class="form-control" required style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="perfilAdminTelefono" class="form-label small fw-bold text-muted mb-1">Teléfono</label>
+                            <input type="text" id="perfilAdminTelefono" class="form-control" placeholder="ej. 4831234567" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted mb-1">Rol en el Sistema</label>
+                            <input type="text" id="perfilAdminRol" class="form-control bg-light" readonly style="border-radius: var(--radius-sm);">
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-top pt-3 text-dark"><i class="bi bi-shield-lock text-success"></i> Cambiar Contraseña</h5>
+                    <p class="text-muted small mb-3">Si deseas cambiar tu contraseña de administrador, completa los campos de abajo. De lo contrario, déjalos vacíos.</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="perfilAdminPasswordActual" class="form-label small fw-bold text-muted mb-1">Contraseña Actual</label>
+                            <input type="password" id="perfilAdminPasswordActual" class="form-control" placeholder="••••••••" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="perfilAdminPasswordNuevo" class="form-label small fw-bold text-muted mb-1">Nueva Contraseña</label>
+                            <input type="password" id="perfilAdminPasswordNuevo" class="form-control" placeholder="••••••••" style="border-radius: var(--radius-sm);">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="perfilAdminPasswordConfirmar" class="form-label small fw-bold text-muted mb-1">Confirmar Nueva Contraseña</label>
+                            <input type="password" id="perfilAdminPasswordConfirmar" class="form-control" placeholder="••••••••" style="border-radius: var(--radius-sm);">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success fw-bold px-4 py-2" style="border-radius: var(--radius-sm); background-color: var(--primary) !important; border: none;">
+                        <i class="bi bi-save"></i> Guardar Perfil Administrador
                     </button>
                 </form>
             </div>
