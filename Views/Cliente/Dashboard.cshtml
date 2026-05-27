@@ -427,7 +427,7 @@
                 });
 
                 html += `
-                    <div class="card p-3 border shadow-sm item-pedido-click" onclick="seleccionarPedido(${p.id})" style="border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
+                    <div class="card p-3 border shadow-sm item-pedido-click" id="card-pedido-${p.id}" onclick="seleccionarPedido(${p.id})" style="border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="fw-extrabold text-success">Pedido #${p.id}</span>
                             <span class="badge ${badgeColor}">${p.estado}</span>
@@ -453,7 +453,10 @@
             document.querySelectorAll(".item-pedido-click").forEach(el => {
                 el.classList.remove("border-success", "bg-success", "bg-opacity-10");
             });
-            event.currentTarget.classList.add("border-success", "bg-success", "bg-opacity-10");
+            const cardEl = document.getElementById("card-pedido-" + id);
+            if (cardEl) {
+                cardEl.classList.add("border-success", "bg-success", "bg-opacity-10");
+            }
 
             // Ocultar mensaje vacío y mostrar contenido
             document.getElementById("detalle-vacio-mensaje").classList.add("d-none");
