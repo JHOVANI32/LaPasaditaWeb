@@ -13,7 +13,7 @@ using System.Security.Claims;
 namespace LaPasaditaWeb.Controllers.Api
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/Perfil")]
     [Authorize]
     public class PerfilApiController : ControllerBase
     {
