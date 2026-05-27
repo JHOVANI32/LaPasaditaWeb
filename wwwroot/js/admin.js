@@ -625,24 +625,58 @@ function guardarProducto(e) {
 }
 
 window.eliminarProducto = function(id) {
-    if (!confirm(`¿Estás seguro de desactivar el Producto #${id}? Se ocultará del catálogo público sin borrar los datos históricos.`)) {
-        return;
-    }
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: `El producto #${id} se eliminará permanentemente del inventario si no tiene ventas registradas.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        background: '#fff',
+        customClass: {
+            popup: 'rounded-4 shadow-lg border-0'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loader de espera
+            Swal.fire({
+                title: 'Eliminando...',
+                text: 'Por favor espera un momento.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
-    fetch(`/api/AdminProductosApi/${id}`, {
-        method: "DELETE"
-    })
-    .then(res => {
-        if (!res.ok) throw new Error("No se pudo desactivar el producto.");
-        return res.json();
-    })
-    .then(result => {
-        mostrarNotificacionAdmin(result.mensaje, "warning");
-        cargarInventario();
-    })
-    .catch(err => {
-        console.error("Error al eliminar producto:", err);
-        mostrarNotificacionAdmin("No se pudo desactivar el producto.", "danger");
+            fetch(`/api/AdminProductosApi/${id}`, {
+                method: "DELETE"
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.mensaje || "No se pudo procesar la solicitud.");
+                return data;
+            })
+            .then(data => {
+                Swal.fire({
+                    title: data.esBorradoFisico ? '¡Eliminado!' : 'Desactivado',
+                    text: data.mensaje,
+                    icon: data.esBorradoFisico ? 'success' : 'info',
+                    confirmButtonColor: '#27ae60'
+                });
+                cargarInventario();
+            })
+            .catch(err => {
+                console.error("Error al eliminar producto:", err);
+                Swal.fire({
+                    title: 'Error',
+                    text: err.message || "No se pudo completar la eliminación.",
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
+            });
+        }
     });
 };
 

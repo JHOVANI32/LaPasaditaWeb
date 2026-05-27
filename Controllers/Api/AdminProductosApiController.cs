@@ -167,7 +167,7 @@ namespace LaPasaditaWeb.Controllers.Api
             return Ok(new { mensaje = "Producto actualizado con éxito." });
         }
 
-        // DELETE: api/AdminProductosApi/5 (Borrado Lógico)
+        // DELETE: api/AdminProductosApi/5 (Borrado Físico con fallback de Borrado Lógico)
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarProducto(int id)
         {
@@ -177,12 +177,34 @@ namespace LaPasaditaWeb.Controllers.Api
                 return NotFound(new { mensaje = "Producto no encontrado." });
             }
 
-            // Realizamos un Borrado Lógico para no romper pedidos históricos
-            producto.Activo = false;
-            _context.Productos.Update(producto);
-            await _context.SaveChangesAsync();
+            // Verificar si tiene pedidos históricos para no violar la FK restrictiva
+            var tienePedidos = await _context.DetallesPedidos.AnyAsync(dp => dp.ProductoId == id);
 
-            return Ok(new { mensaje = "Producto desactivado correctamente del catálogo." });
+            if (tienePedidos)
+            {
+                // Si ya se ha vendido, no podemos borrarlo físicamente. Realizamos una desactivación.
+                producto.Activo = false;
+                _context.Productos.Update(producto);
+                await _context.SaveChangesAsync();
+
+                return Ok(new 
+                { 
+                    esBorradoFisico = false, 
+                    mensaje = "El producto tiene ventas registradas en el historial. Se ha desactivado y ocultado del catálogo para proteger la contabilidad histórica de los pedidos." 
+                });
+            }
+            else
+            {
+                // Si no tiene ventas, lo eliminamos físicamente por completo
+                _context.Productos.Remove(producto);
+                await _context.SaveChangesAsync();
+
+                return Ok(new 
+                { 
+                    esBorradoFisico = true, 
+                    mensaje = "El producto se ha eliminado físicamente de la base de datos de manera definitiva." 
+                });
+            }
         }
 
         // POST: api/AdminProductosApi/upload
