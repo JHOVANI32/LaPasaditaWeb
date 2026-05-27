@@ -697,6 +697,9 @@
 
             // Abrir modal de Bootstrap
             const modalEl = document.getElementById("modalEditarPedido");
+            if (modalEl && modalEl.parentNode !== document.body) {
+                document.body.appendChild(modalEl);
+            }
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
         };
