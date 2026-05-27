@@ -1290,18 +1290,47 @@ window.subirArchivoExcel = function() {
         return;
     }
 
-    const formData = new FormData();
-    formData.append("archivoExcel", file);
-
     const btn = document.getElementById("btnSubirExcel");
     const progreso = document.getElementById("progresoCargaMasiva");
+    const msgEl = document.getElementById("mensajeCargaMasiva");
     
     btn.disabled = true;
     progreso.classList.remove("d-none");
 
-    fetch("/api/AdminProductosApi/carga-masiva", {
-        method: "POST",
-        body: formData
+    // Optional: Bulk upload original image files
+    const imgInput = document.getElementById("imagenesCargaMasiva");
+    let subirImagenesPromise = Promise.resolve();
+
+    if (imgInput && imgInput.files.length > 0) {
+        if (msgEl) msgEl.textContent = `Subiendo ${imgInput.files.length} imágenes...`;
+        const imgFormData = new FormData();
+        for (let i = 0; i < imgInput.files.length; i++) {
+            imgFormData.append("imagenes", imgInput.files[i]);
+        }
+        
+        subirImagenesPromise = fetch("/api/AdminProductosApi/subir-imagenes-masivas", {
+            method: "POST",
+            body: imgFormData
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al subir las imágenes masivas."); });
+            return res.json();
+        })
+        .then(imgData => {
+            console.log("Imágenes masivas subidas:", imgData);
+            if (msgEl) msgEl.textContent = "Procesando archivo Excel...";
+        });
+    }
+
+    subirImagenesPromise
+    .then(() => {
+        const formData = new FormData();
+        formData.append("archivoExcel", file);
+
+        return fetch("/api/AdminProductosApi/carga-masiva", {
+            method: "POST",
+            body: formData
+        });
     })
     .then(res => {
         if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al procesar el archivo Excel."); });
@@ -1314,15 +1343,20 @@ window.subirArchivoExcel = function() {
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.hide();
         
+        // Reset the form
+        const form = document.getElementById("formCargaMasiva");
+        if (form) form.reset();
+        
         cargarInventario();
     })
     .catch(err => {
-        console.error("Error al subir excel:", err);
+        console.error("Error en carga masiva:", err);
         mostrarNotificacionAdmin(err.message || "Ocurrió un error al procesar el archivo.", "danger");
     })
     .finally(() => {
         btn.disabled = false;
         progreso.classList.add("d-none");
+        if (msgEl) msgEl.textContent = "Procesando archivo...";
     });
 };
 

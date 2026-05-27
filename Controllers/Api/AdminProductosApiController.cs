@@ -223,6 +223,59 @@ namespace LaPasaditaWeb.Controllers.Api
             return Ok(new { rutaImagen = rutaRelativa });
         }
 
+        // POST: api/AdminProductosApi/subir-imagenes-masivas
+        [HttpPost("subir-imagenes-masivas")]
+        public async Task<IActionResult> SubirImagenesMasivas([FromForm] List<IFormFile> imagenes)
+        {
+            if (imagenes == null || imagenes.Count == 0)
+            {
+                return BadRequest(new { mensaje = "No se recibieron imágenes para subir." });
+            }
+
+            var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var carpetaDestino = Path.Combine(_env.WebRootPath, "images", "productos");
+            if (!Directory.Exists(carpetaDestino))
+            {
+                Directory.CreateDirectory(carpetaDestino);
+            }
+
+            int subidasExitosas = 0;
+            var errores = new List<string>();
+
+            foreach (var imagen in imagenes)
+            {
+                try
+                {
+                    var extension = Path.GetExtension(imagen.FileName).ToLower();
+                    if (!extensionesPermitidas.Contains(extension))
+                    {
+                        errores.Add($"Archivo '{imagen.FileName}' no permitido: extensión inválida.");
+                        continue;
+                    }
+
+                    // Limpiar y sanitizar el nombre original del archivo
+                    var nombreOriginal = Path.GetFileName(imagen.FileName).ToLower();
+                    var rutaFisica = Path.Combine(carpetaDestino, nombreOriginal);
+
+                    using (var stream = new FileStream(rutaFisica, FileMode.Create))
+                    {
+                        await imagen.CopyToAsync(stream);
+                    }
+                    subidasExitosas++;
+                }
+                catch (Exception ex)
+                {
+                    errores.Add($"Error al subir '{imagen.FileName}': {ex.Message}");
+                }
+            }
+
+            return Ok(new 
+            { 
+                mensaje = $"Se subieron {subidasExitosas} imágenes correctamente.",
+                errores = errores
+            });
+        }
+
         // GET: api/AdminProductosApi/plantilla-excel
         [HttpGet("plantilla-excel")]
         public async Task<IActionResult> DescargarPlantilla()
